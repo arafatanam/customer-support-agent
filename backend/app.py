@@ -1,9 +1,9 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import openai
 import os
 from supabase import create_client
 import json
+from groq import Groq  # Import Groq
 
 app = Flask(__name__)
 CORS(app)
@@ -11,19 +11,13 @@ CORS(app)
 # Get environment variables
 supabase_url = os.environ.get('SUPABASE_URL')
 supabase_key = os.environ.get('SUPABASE_KEY')
-openai_key = os.environ.get('OPENAI_KEY')
+groq_api_key = os.environ.get('GROQ_API_KEY')  # Changed from OPENAI_KEY
 
-# Check if variables are set
-if not supabase_url or not supabase_key:
-    print("WARNING: Supabase environment variables not set!")
-if not openai_key:
-    print("WARNING: OpenAI environment variable not set!")
+# Initialize Groq client
+groq_client = Groq(api_key=groq_api_key)
 
 # Free Supabase setup
 supabase = create_client(supabase_url, supabase_key)
-
-# OpenAI setup
-openai.api_key = openai_key
 
 # Your custom prompt for e-commerce support
 SYSTEM_PROMPT = """You are a friendly customer support agent for an e-commerce store.
@@ -48,8 +42,8 @@ def home():
         'message': 'Customer Support Agent API is running',
         'endpoints': {
             '/chat': 'POST - Send messages to the support agent',
-            '/order-status': 'POST - Check order status',
-            '/health': 'GET - Health check'
+            '/health': 'GET - Health check',
+            '/order-status': 'POST - Check order status'
         }
     })
 
@@ -78,9 +72,9 @@ def chat():
         # Add user message
         messages.append({"role": "user", "content": message})
 
-        # Get AI response
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+        # Get AI response from Groq
+        response = groq_client.chat.completions.create(
+            model="llama3-70b-8192",  # Free model, 70B parameters
             messages=messages,
             temperature=0.7,
             max_tokens=200
@@ -115,7 +109,6 @@ def order_status():
     """Check real order status (mock for demo)"""
     try:
         order_number = request.json.get('order_number')
-        # In reality, you'd connect to Shopify/WooCommerce API
         return jsonify({
             'status': 'shipped',
             'estimated_delivery': '3-5 business days',
@@ -123,6 +116,19 @@ def order_status():
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/test-groq', methods=['GET'])
+def test_groq():
+    """Test endpoint to verify Groq is working"""
+    try:
+        response = groq_client.chat.completions.create(
+            model="llama3-70b-8192",
+            messages=[{"role": "user", "content": "Say 'Groq is working!'"}],
+            max_tokens=10
+        )
+        return jsonify({'status': 'success', 'message': response.choices[0].message.content})
+    except Exception as e:
+        return jsonify({'status': 'error', 'error': str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
