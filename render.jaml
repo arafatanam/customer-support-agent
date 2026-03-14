@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: customer-support-agent-api
+    runtime: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && gunicorn app:app
+    rootDir: backend
