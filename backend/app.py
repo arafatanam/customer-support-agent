@@ -74,7 +74,7 @@ def chat():
 
         # Get AI response from Groq
         response = groq_client.chat.completions.create(
-            model="llama3-8b-8192",  # Free model, 70B parameters
+            model="llama-3.3-70b-versatile",  # Free model, 70B parameters
             messages=messages,
             temperature=0.7,
             max_tokens=200
@@ -122,7 +122,7 @@ def test_groq():
     """Test endpoint to verify Groq is working"""
     try:
         response = groq_client.chat.completions.create(
-            model="llama3-8b-8192",
+            model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": "Say 'Groq is working!'"}],
             max_tokens=10
         )
