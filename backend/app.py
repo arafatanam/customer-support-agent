@@ -122,7 +122,7 @@ def test_groq():
     """Test endpoint to verify Groq is working"""
     try:
         response = groq_client.chat.completions.create(
-            model="llama3-70b-8192",
+            model="llama3-8b-8192",
             messages=[{"role": "user", "content": "Say 'Groq is working!'"}],
             max_tokens=10
         )
