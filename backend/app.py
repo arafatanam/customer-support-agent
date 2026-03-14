@@ -74,7 +74,7 @@ def chat():
 
         # Get AI response from Groq
         response = groq_client.chat.completions.create(
-            model="llama3-70b-8192",  # Free model, 70B parameters
+            model="llama3-8b-8192",  # Free model, 70B parameters
             messages=messages,
             temperature=0.7,
             max_tokens=200
