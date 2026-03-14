@@ -1,7 +1,7 @@
 class SupportWidget {
   constructor(storeId, options = {}) {
     this.storeId = storeId;
-    this.apiUrl = "https://your-backend.onrender.com";
+    this.apiUrl = 'https://customer-support-agent-y6qb.onrender.com';
     this.conversationId = "new";
     this.init();
   }
