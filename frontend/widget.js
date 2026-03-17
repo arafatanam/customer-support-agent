@@ -382,7 +382,7 @@ class SupportWidget {
                                 <circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/>
                             </svg>
                         </div>
-                        <div class="sw-bubble">Hi there! 👋 I'm here to help. Ask me anything about your orders, shipping, or returns.</div>
+                        <div class="sw-bubble">Hi there! I'm here to help. Ask me anything about your orders, shipping, or returns.</div>
                     </div>
                     <div id="sw-typing">
                         <div class="sw-msg-avatar sw-msg-avatar--bot" style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#7c6af7,#a78bfa);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">
