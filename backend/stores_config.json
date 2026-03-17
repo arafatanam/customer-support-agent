@@ -1,0 +1,89 @@
+{
+  "prism_the_store": {
+    "store_id": "prism_the_store_001",
+    "name": "Prism The Store",
+    "website": "www.prismthestore.com",
+    "brand": {
+      "voice": "Luxury & Premium",
+      "primary_color": "#304237",
+      "secondary_color": "#C4A467",
+      "greeting": "Hi! Welcome to Prism The Store. How can I help you today?"
+    },
+    "platform": "WordPress",
+    "products": {
+      "categories": [
+        "Coral Haze Juttis",
+        "Ritu Kumar",
+        "Anita Dongre",
+        "Basanti",
+        "Mul Mul"
+      ],
+      "top_products": [
+        "Judyth",
+        "Spring Fling",
+        "Hannah",
+        "Mocha",
+        "Camellia",
+        "Nazakat",
+        "Esba",
+        "Beyonce",
+        "Sweet Pea",
+        "Gelato"
+      ]
+    },
+    "policies": {
+      "privacy": "Prism The Store collects personal information (name, email, phone, address, messages) when you register or interact with us. We use this to operate our website, provide customer support, communicate updates, and prevent fraud. Technical data (IP address, browser type) is automatically collected via cookies. You have rights under CCPA and GDPR to access, correct, or delete your data. We don't knowingly collect information from children under 13.",
+      "terms": "By using Prism The Store, you agree to our terms. Website content is owned by us or our licensors and may only be used for personal purposes - no copying, republishing, or redistribution without permission. We use cookies as per our privacy policy. Organizations may link to our site under specific conditions. We reserve the right to modify terms at any time and limit liability for damages to the maximum extent permitted by law.",
+      "shipping": "We ship internationally! For specific shipping times and rates, please contact our store directly.",
+      "international": true
+    },
+    "contact": {
+      "email": "info@prismthestore.com",
+      "support_hours": "10 AM to 10 PM (Dhaka Time)",
+      "phone": "+8801729103420"
+    },
+    "faqs": [
+      {
+        "question": "May I know when will I receive my parcel?",
+        "answer": "For updates on your order delivery, please contact our Dhaka store at +8801729103420. Our team will assist you with tracking information."
+      },
+      {
+        "question": "What are your store hours?",
+        "answer": "Our support team is available from 10 AM to 10 PM (Dhaka Time). You can reach us via email at info@prismthestore.com or call +8801729103420 during these hours."
+      },
+      {
+        "question": "Do you ship internationally?",
+        "answer": "Yes! Prism The Store offers international shipping. For specific shipping rates and delivery times to your country, please contact us at info@prismthestore.com."
+      },
+      {
+        "question": "What is your return policy?",
+        "answer": "For return inquiries and assistance, please contact our Dhaka store at +8801729103420 or email info@prismthestore.com. Our team will guide you through the return process."
+      },
+      {
+        "question": "Can you tell me more about your products?",
+        "answer": "We offer a beautiful collection including Coral Haze Juttis, Ritu Kumar, Anita Dongre, Basanti, and Mul Mul. Our top products include Judyth, Spring Fling, Hannah, Mocha, Camellia, Nazakat, Esba, Beyonce, Sweet Pea, and Gelato. Would you like details on any specific item?"
+      },
+      {
+        "question": "How can I contact customer support?",
+        "answer": "You can reach us at info@prismthestore.com or call +8801729103420. Our support hours are 10 AM to 10 PM Dhaka Time."
+      },
+      {
+        "question": "Is my personal information safe with Prism?",
+        "answer": "Yes, we take privacy seriously. We collect only necessary information to serve you better and comply with CCPA and GDPR regulations. You can read our full privacy policy at www.prismthestore.com/privacy."
+      },
+      {
+        "question": "Do you have a physical store?",
+        "answer": "Yes, you can visit our Dhaka store in Gulshan Pink City, 4th Floor, Shob 6E-B amd our Chattogram store in Khulshi Mart."
+      }
+    ],
+    "escalation": {
+      "human_handoff": true,
+      "escalation_phrase": "I'll connect you with our human support team. Please expect a response within 24 hours or call us at +8801729103420 for immediate assistance."
+    },
+    "install": {
+      "position": "bottom-left",
+      "button_color": "#304237",
+      "header_color": "#C4A467"
+    }
+  }
+}
