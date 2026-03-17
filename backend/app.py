@@ -3,7 +3,7 @@ from flask_cors import CORS
 import os
 from supabase import create_client
 import json
-from groq import Groq  # Import Groq
+from groq import Groq
 
 app = Flask(__name__)
 CORS(app)
@@ -11,7 +11,7 @@ CORS(app)
 # Get environment variables
 supabase_url = os.environ.get('SUPABASE_URL')
 supabase_key = os.environ.get('SUPABASE_KEY')
-groq_api_key = os.environ.get('GROQ_API_KEY')  # Changed from OPENAI_KEY
+groq_api_key = os.environ.get('GROQ_API_KEY')
 
 # Initialize Groq client
 groq_client = Groq(api_key=groq_api_key)
@@ -19,21 +19,26 @@ groq_client = Groq(api_key=groq_api_key)
 # Free Supabase setup
 supabase = create_client(supabase_url, supabase_key)
 
-# Your custom prompt for e-commerce support
-SYSTEM_PROMPT = """You are a friendly customer support agent for an e-commerce store.
-Your goals:
-- Answer questions about orders, shipping, returns, products
-- Be helpful, concise, and warm
-- If you don't know something, say you'll connect them with a human
-- Collect order numbers when needed
+# Load store configurations
+def load_store_configs():
+    try:
+        with open('stores_config.json', 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        # Fallback to default configs
+        return {
+            "default": {
+                "name": "Demo Store",
+                "brand": {"voice": "friendly"},
+                "policies": {},
+                "products": {"top_products": []},
+                "contact": {},
+                "faqs": [],
+                "escalation": {"escalation_phrase": "I'll connect you with human support."}
+            }
+        }
 
-Common topics:
-- Order status: Ask for order number, check system
-- Returns: Explain 30-day policy, guide through process
-- Shipping: Standard 3-5 days, express 1-2 days
-- Product questions: Describe features, check availability
-
-Keep responses under 150 words. Be helpful but efficient."""
+STORE_CONFIGS = load_store_configs()
 
 @app.route('/')
 def home():
@@ -43,7 +48,8 @@ def home():
         'endpoints': {
             '/chat': 'POST - Send messages to the support agent',
             '/health': 'GET - Health check',
-            '/order-status': 'POST - Check order status'
+            '/order-status': 'POST - Check order status',
+            '/test-groq': 'GET - Test Groq connection'
         }
     })
 
@@ -57,6 +63,38 @@ def chat():
         data = request.json
         message = data.get('message', '')
         conversation_id = data.get('conversation_id', 'new')
+        store_id = data.get('store_id', 'default')
+        
+        # Get store configuration
+        store_config = STORE_CONFIGS.get(store_id, STORE_CONFIGS.get('default', {}))
+        
+        # Create store-specific system prompt
+        system_prompt = f"""You are a luxury customer support agent for {store_config.get('name', 'Prism The Store')}.
+
+Brand Voice: {store_config.get('brand', {}).get('voice', 'Luxury & Premium')}
+
+Store Policies:
+- Privacy: {store_config.get('policies', {}).get('privacy', 'Available on website')}
+- Terms: {store_config.get('policies', {}).get('terms', 'Available on website')}
+- Shipping: {store_config.get('policies', {}).get('shipping', 'International shipping available')}
+
+Products: {', '.join(store_config.get('products', {}).get('top_products', []))}
+
+Contact Information:
+- Email: {store_config.get('contact', {}).get('email', 'info@prismthestore.com')}
+- Phone: {store_config.get('contact', {}).get('phone', '+8801729103420')}
+- Support Hours: {store_config.get('contact', {}).get('support_hours', '10 AM to 10 PM')}
+
+Frequently Asked Questions:
+{chr(10).join([f"Q: {faq['question']} A: {faq['answer']}" for faq in store_config.get('faqs', [])])}
+
+Guidelines:
+- Always be polite, helpful, and maintain a luxury brand voice
+- If asked about delivery, provide the phone number for updates
+- If you don't know something, offer to connect with human support
+- For complex issues, use the escalation phrase: {store_config.get('escalation', {}).get('escalation_phrase', '')}
+
+Answer questions specifically about {store_config.get('name')}. Be knowledgeable and maintain premium service standards."""
 
         # Get conversation history from Supabase
         if conversation_id != 'new':
@@ -66,15 +104,15 @@ def chat():
                 .execute()
             messages = history.data[0]['messages'] if history.data else []
         else:
-            messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-            conversation_id = create_conversation()
+            messages = [{"role": "system", "content": system_prompt}]
+            conversation_id = create_conversation(system_prompt)
 
         # Add user message
         messages.append({"role": "user", "content": message})
 
         # Get AI response from Groq
         response = groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",  # Free model, 70B parameters
+            model="llama-3.3-70b-versatile",
             messages=messages,
             temperature=0.7,
             max_tokens=200
@@ -98,9 +136,9 @@ def chat():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-def create_conversation():
+def create_conversation(system_prompt):
     result = supabase.table('conversations')\
-        .insert({'messages': [{"role": "system", "content": SYSTEM_PROMPT}]})\
+        .insert({'messages': [{"role": "system", "content": system_prompt}]})\
         .execute()
     return result.data[0]['id']
 
