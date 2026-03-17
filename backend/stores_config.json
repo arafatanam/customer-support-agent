@@ -1,8 +1,23 @@
 {
-  "prism_the_store": {
+  "prism_the_store_001": {
     "store_id": "prism_the_store_001",
     "name": "Prism The Store",
     "website": "www.prismthestore.com",
+    "about": {
+      "founded": 2018,
+      "founder": "Tamanna Ahmed",
+      "founder_title": "Proprietor",
+      "story": "Circa 2018, we successfully established PRISM. The vision behind it was very clear, so the business kicked off quickly. We had an operation of a small boutique, with in house designers tirelessly creating original pieces. Yet I soon realized we had to match our efforts in sales with that of our craft. And so PRISM was born.",
+      "description": "Prism The Store is known as the Luxurious Multi-designer Outlet.",
+      "mission": "Supporting designers & artisans beyond our own brand. Bringing beautiful clothing to light. A true multi-designer destination.",
+      "brands_supported": [
+        "Coral Haze Juttis",
+        "Ritu Kumar", 
+        "Anita Dongre",
+        "Basanti",
+        "Mul Mul"
+      ]
+    },
     "brand": {
       "voice": "Luxury & Premium",
       "primary_color": "#304237",
@@ -20,7 +35,7 @@
       ],
       "top_products": [
         "Judyth",
-        "Spring Fling",
+        "Spring Fling", 
         "Hannah",
         "Mocha",
         "Camellia",
@@ -31,16 +46,42 @@
         "Gelato"
       ]
     },
+    "locations": [
+      {
+        "city": "Dhaka",
+        "address": "Shop 6E-B, 4th Floor, Gulshan Pink City Shopping Center, 15 Gulshan Avenue, Dhaka 1212, Bangladesh",
+        "phone": "+8801729103420",
+        "type": "flagship"
+      },
+      {
+        "city": "Chattogram",
+        "address": "Same floor as Khulshi Mart, Arcadia Shopping Centre, 4 Zakir Hossain Road, South Khulshi, Chattogram 4225, Bangladesh",
+        "phone": "+8801890312221",
+        "type": "branch"
+      }
+    ],
+    "contact": {
+      "primary_phone": "+8801729103420",
+      "secondary_phone": "+8801890312221",
+      "email": "info@prismthestore.com",
+      "support_hours": "10 AM to 10 PM (Bangladesh Time)",
+      "social_media": {
+        "facebook": "https://www.facebook.com/prismthestore/",
+        "instagram": "https://www.instagram.com/prismthestore"
+      }
+    },
     "policies": {
       "privacy": "Prism The Store collects personal information (name, email, phone, address, messages) when you register or interact with us. We use this to operate our website, provide customer support, communicate updates, and prevent fraud. Technical data (IP address, browser type) is automatically collected via cookies. You have rights under CCPA and GDPR to access, correct, or delete your data. We don't knowingly collect information from children under 13.",
       "terms": "By using Prism The Store, you agree to our terms. Website content is owned by us or our licensors and may only be used for personal purposes - no copying, republishing, or redistribution without permission. We use cookies as per our privacy policy. Organizations may link to our site under specific conditions. We reserve the right to modify terms at any time and limit liability for damages to the maximum extent permitted by law.",
       "shipping": "We ship internationally! For specific shipping times and rates, please contact our store directly.",
-      "international": true
+      "international": true,
+      "returns": "For return inquiries and assistance, please contact our Dhaka store at +8801729103420 or email info@prismthestore.com. Our team will guide you through the return process."
     },
-    "contact": {
-      "email": "info@prismthestore.com",
-      "support_hours": "10 AM to 10 PM (Dhaka Time)",
-      "phone": "+8801729103420"
+    "partnerships": {
+      "coral_haze": {
+        "name": "Coral Haze Bangladesh",
+        "relationship": "It’s been a rewarding journey establishing Coral Haze Bangladesh, but it wouldn’t have been possible without PRISM’s help. I have had to choose only the inventory. From the moment the shipment arrives, PRISM takes over. From handling inventory to providing insights, managing accounting, and effectively marketing, we’re left with only the revenue sheets at the end of each month, which translates to profit."
+      }
     },
     "faqs": [
       {
@@ -49,7 +90,7 @@
       },
       {
         "question": "What are your store hours?",
-        "answer": "Our support team is available from 10 AM to 10 PM (Dhaka Time). You can reach us via email at info@prismthestore.com or call +8801729103420 during these hours."
+        "answer": "Our support team is available from 10 AM to 10 PM (Bangladesh Time). You can reach us via email at info@prismthestore.com or call +8801729103420 during these hours."
       },
       {
         "question": "Do you ship internationally?",
@@ -61,11 +102,23 @@
       },
       {
         "question": "Can you tell me more about your products?",
-        "answer": "We offer a beautiful collection including Coral Haze Juttis, Ritu Kumar, Anita Dongre, Basanti, and Mul Mul. Our top products include Judyth, Spring Fling, Hannah, Mocha, Camellia, Nazakat, Esba, Beyonce, Sweet Pea, and Gelato. Would you like details on any specific item?"
+        "answer": "We offer a beautiful collection, including Coral Haze Juttis, Ritu Kumar, Anita Dongre, Basanti, and Mul Mul. Our top products include Judyth, Spring Fling, Hannah, Mocha, Camellia, Nazakat, Esba, Beyonce, Sweet Pea, and Gelato. Would you like details on any specific item?"
       },
       {
         "question": "How can I contact customer support?",
-        "answer": "You can reach us at info@prismthestore.com or call +8801729103420. Our support hours are 10 AM to 10 PM Dhaka Time."
+        "answer": "You can reach us at info@prismthestore.com or call +8801729103420. Our support hours are 10 AM to 10 PM Bangladesh Time."
+      },
+      {
+        "question": "Where are your physical stores located?",
+        "answer": "We have two locations in Bangladesh: Dhaka - Shop 6E-B, 4th Floor, Gulshan Pink City Shopping Center, 15 Gulshan Avenue, Dhaka 1212. Chattogram - Same floor as Khulshi Mart, Arcadia Shopping Centre, 4 Zakir Hossain Road, South Khulshi, Chattogram 4225."
+      },
+      {
+        "question": "What is the Dhaka store phone number?",
+        "answer": "Our Dhaka store can be reached at +8801729103420."
+      },
+      {
+        "question": "What is the Chattogram store phone number?",
+        "answer": "Our Chattogram store can be reached at +8801890312221."
       },
       {
         "question": "Is my personal information safe with Prism?",
@@ -73,7 +126,23 @@
       },
       {
         "question": "Do you have a physical store?",
-        "answer": "Yes, you can visit our Dhaka store in Gulshan Pink City, 4th Floor, Shob 6E-B amd our Chattogram store in Khulshi Mart."
+        "answer": "Yes, we have two locations in Bangladesh: Dhaka and Chattogram. For exact addresses and directions, please visit our website or contact us."
+      },
+      {
+        "question": "Tell me about the founder of Prism.",
+        "answer": "Prism The Store was founded in 2018 by Tamanna Ahmed (Proprietor). It started as a small boutique with in-house designers creating original pieces and has grown into a luxurious multi-designer outlet."
+      },
+      {
+        "question": "What is Coral Haze Bangladesh's relationship with Prism?",
+        "answer": "Coral Haze Bangladesh is a brand supported by Prism. PRISM handles everything from inventory management to accounting and marketing for Coral Haze, allowing them to focus on design and sales."
+      },
+      {
+        "question": "What designers do you carry?",
+        "answer": "We carry multiple designers including Coral Haze Juttis, Ritu Kumar, Anita Dongre, Basanti, and Mul Mul. We're proud to support local artisans and bring beautiful clothing to light."
+      },
+      {
+        "question": "When was Prism The Store founded?",
+        "answer": "Prism The Store was established in 2018 with a clear vision to become a luxurious multi-designer outlet."
       }
     ],
     "escalation": {
