@@ -5,8 +5,8 @@ import os
 from supabase import create_client
 import json
 from groq import Groq
-from whatsapp_handler import whatsapp_handler
-import threading
+# from whatsapp_handler import whatsapp_handler
+# import threading
 from datetime import datetime
 import time
 
@@ -182,38 +182,36 @@ def test_groq():
     except Exception as e:
         return jsonify({'status': 'error', 'error': str(e)}), 500
 
-# Initialize WhatsApp on startup
+# # Initialize WhatsApp on startup
+# def init_whatsapp():
+#     """Initialize WhatsApp web on server start"""
+#     if whatsapp_handler.start_driver():
+#         if whatsapp_handler.wait_for_login():
+#             print("✅ WhatsApp ready!")
+
+#             # Create groups for all stores
+#             for store_id, config in STORE_CONFIGS.items():
+#                 if 'whatsapp' in config and config['whatsapp']['enabled']:
+#                     group_name = config['whatsapp']['group_name']
+#                     members = config['whatsapp']['team_members']
+
+#                     # Create group if doesn't exist
+#                     if group_name not in whatsapp_handler.group_names.values():
+#                         whatsapp_handler.create_or_get_group(
+#                             store_id,
+#                             group_name,
+#                             members
+#                         )
+
+#             print("✅ All WhatsApp groups ready!")
+#         else:
+#             print("❌ Please scan QR code in the console")
+#     else:
+#         print("❌ Failed to start WhatsApp")
 
 
-def init_whatsapp():
-    """Initialize WhatsApp web on server start"""
-    if whatsapp_handler.start_driver():
-        if whatsapp_handler.wait_for_login():
-            print("✅ WhatsApp ready!")
-
-            # Create groups for all stores
-            for store_id, config in STORE_CONFIGS.items():
-                if 'whatsapp' in config and config['whatsapp']['enabled']:
-                    group_name = config['whatsapp']['group_name']
-                    members = config['whatsapp']['team_members']
-
-                    # Create group if doesn't exist
-                    if group_name not in whatsapp_handler.group_names.values():
-                        whatsapp_handler.create_or_get_group(
-                            store_id,
-                            group_name,
-                            members
-                        )
-
-            print("✅ All WhatsApp groups ready!")
-        else:
-            print("❌ Please scan QR code in the console")
-    else:
-        print("❌ Failed to start WhatsApp")
-
-
-# Start WhatsApp in background thread
-threading.Thread(target=init_whatsapp, daemon=True).start()
+# # Start WhatsApp in background thread
+# threading.Thread(target=init_whatsapp, daemon=True).start()
 
 
 @app.route('/chat', methods=['POST'])
@@ -239,34 +237,34 @@ def chat():
         is_urgent = any(keyword in message.lower()
                         for keyword in urgent_keywords)
 
-        # If urgent and WhatsApp is enabled
-        if is_urgent and store_config.get('whatsapp', {}).get('enabled'):
+        # # If urgent and WhatsApp is enabled
+        # if is_urgent and store_config.get('whatsapp', {}).get('enabled'):
 
-            # If no email/phone provided, ask for it
-            if not customer_email and not customer_phone:
-                return jsonify({
-                    'response': "I understand this is urgent! To connect you with our team immediately, please provide your email or phone number:",
-                    'conversation_id': conversation_id,
-                    'ask_contact': True
-                })
+        #     # If no email/phone provided, ask for it
+        #     if not customer_email and not customer_phone:
+        #         return jsonify({
+        #             'response': "I understand this is urgent! To connect you with our team immediately, please provide your email or phone number:",
+        #             'conversation_id': conversation_id,
+        #             'ask_contact': True
+        #         })
 
-            # Send to WhatsApp group
-            customer_info = {
-                'store_name': store_config['name'],
-                'email': customer_email or 'Not provided',
-                'phone': customer_phone or 'Not provided',
-                'urgent_message': message,
-                'conversation_id': conversation_id,
-                'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            }
+        #     # Send to WhatsApp group
+        #     customer_info = {
+        #         'store_name': store_config['name'],
+        #         'email': customer_email or 'Not provided',
+        #         'phone': customer_phone or 'Not provided',
+        #         'urgent_message': message,
+        #         'conversation_id': conversation_id,
+        #         'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        #     }
 
-            # Send to WhatsApp group
-            group_name = store_config['whatsapp']['group_name']
-            success = whatsapp_handler.send_urgent_alert(
-                store_id,
-                group_name,
-                customer_info
-            )
+        #     # Send to WhatsApp group
+        #     group_name = store_config['whatsapp']['group_name']
+        #     success = whatsapp_handler.send_urgent_alert(
+        #         store_id,
+        #         group_name,
+        #         customer_info
+        #     )
 
             if success:
                 return jsonify({
