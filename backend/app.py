@@ -25,6 +25,8 @@ groq_client = Groq(api_key=groq_api_key)
 supabase = create_client(supabase_url, supabase_key)
 
 # Load store configurations
+
+
 def load_store_configs():
     try:
         with open('stores_config.json', 'r') as f:
@@ -43,7 +45,9 @@ def load_store_configs():
             }
         }
 
+
 STORE_CONFIGS = load_store_configs()
+
 
 @app.route('/')
 def home():
@@ -58,9 +62,11 @@ def home():
         }
     })
 
+
 @app.route('/health', methods=['GET'])
 def health():
     return jsonify({'status': 'healthy'})
+
 
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -69,10 +75,11 @@ def chat():
         message = data.get('message', '')
         conversation_id = data.get('conversation_id', 'new')
         store_id = data.get('store_id', 'default')
-        
+
         # Get store configuration
-        store_config = STORE_CONFIGS.get(store_id, STORE_CONFIGS.get('default', {}))
-        
+        store_config = STORE_CONFIGS.get(
+            store_id, STORE_CONFIGS.get('default', {}))
+
         # Create store-specific system prompt
         system_prompt = f"""You are a luxury customer support agent for {store_config.get('name', 'Prism The Store')}.
 
@@ -141,11 +148,13 @@ Answer questions specifically about {store_config.get('name')}. Be knowledgeable
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
 def create_conversation(system_prompt):
     result = supabase.table('conversations')\
         .insert({'messages': [{"role": "system", "content": system_prompt}]})\
         .execute()
     return result.data[0]['id']
+
 
 @app.route('/order-status', methods=['POST'])
 def order_status():
@@ -160,6 +169,7 @@ def order_status():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
 @app.route('/test-groq', methods=['GET'])
 def test_groq():
     """Test endpoint to verify Groq is working"""
@@ -171,35 +181,42 @@ def test_groq():
         )
         return jsonify({'status': 'success', 'message': response.choices[0].message.content})
 
+    except Exception as e:
+        return jsonify({'status': 'error', 'error': str(e)}), 500
+
 # Initialize WhatsApp on startup
+
+
 def init_whatsapp():
     """Initialize WhatsApp web on server start"""
     if whatsapp_handler.start_driver():
         if whatsapp_handler.wait_for_login():
             print("✅ WhatsApp ready!")
-            
+
             # Create groups for all stores
             for store_id, config in STORE_CONFIGS.items():
                 if 'whatsapp' in config and config['whatsapp']['enabled']:
                     group_name = config['whatsapp']['group_name']
                     members = config['whatsapp']['team_members']
-                    
+
                     # Create group if doesn't exist
                     if group_name not in whatsapp_handler.group_names.values():
                         whatsapp_handler.create_or_get_group(
-                            store_id, 
-                            group_name, 
+                            store_id,
+                            group_name,
                             members
                         )
-            
+
             print("✅ All WhatsApp groups ready!")
         else:
             print("❌ Please scan QR code in the console")
     else:
         print("❌ Failed to start WhatsApp")
 
+
 # Start WhatsApp in background thread
 threading.Thread(target=init_whatsapp, daemon=True).start()
+
 
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -210,9 +227,9 @@ def chat():
         store_id = data.get('store_id', 'default')
         customer_email = data.get('email', '')
         customer_phone = data.get('phone', '')
-        
+
         store_config = STORE_CONFIGS.get(store_id, {})
-        
+
         # URGENCY DETECTION
         urgent_keywords = [
             'urgent', 'emergency', 'asap', 'immediately', 'quick',
@@ -220,12 +237,13 @@ def chat():
             'help me now', 'right now', 'instant', 'immediate',
             'joldi', 'fast', 'quickly', 'problem', 'issue'
         ]
-        
-        is_urgent = any(keyword in message.lower() for keyword in urgent_keywords)
-        
+
+        is_urgent = any(keyword in message.lower()
+                        for keyword in urgent_keywords)
+
         # If urgent and WhatsApp is enabled
         if is_urgent and store_config.get('whatsapp', {}).get('enabled'):
-            
+
             # If no email/phone provided, ask for it
             if not customer_email and not customer_phone:
                 return jsonify({
@@ -233,7 +251,7 @@ def chat():
                     'conversation_id': conversation_id,
                     'ask_contact': True
                 })
-            
+
             # Send to WhatsApp group
             customer_info = {
                 'store_name': store_config['name'],
@@ -243,15 +261,15 @@ def chat():
                 'conversation_id': conversation_id,
                 'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             }
-            
+
             # Send to WhatsApp group
             group_name = store_config['whatsapp']['group_name']
             success = whatsapp_handler.send_urgent_alert(
-                store_id, 
-                group_name, 
+                store_id,
+                group_name,
                 customer_info
             )
-            
+
             if success:
                 return jsonify({
                     'response': f"✅ Our team has been notified urgently! Someone from Prism will contact you at {customer_email or customer_phone} within {store_config['whatsapp']['response_time']}. You can also call us directly at {store_config['contact']['primary_phone']}",
@@ -266,7 +284,8 @@ def chat():
                 })
 
     except Exception as e:
-        return jsonify({'status': 'error', 'error': str(e)}), 500
+        return jsonify({'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

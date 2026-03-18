@@ -6,11 +6,7 @@
     "whatsapp": {
       "enabled": true,
       "group_name": "Prism Support Team",
-      "team_members": [
-        "+8801729103420",
-        "+8801890312221",
-        "+8801713162795"
-      ],
+      "team_members": ["+8801729103420", "+8801890312221", "+8801713162795"],
       "business_hours": "10 AM to 10 PM",
       "response_time": "15 minutes"
     },
@@ -23,7 +19,7 @@
       "mission": "Supporting designers & artisans beyond our own brand. Bringing beautiful clothing to light. A true multi-designer destination.",
       "brands_supported": [
         "Coral Haze Juttis",
-        "Ritu Kumar", 
+        "Ritu Kumar",
         "Anita Dongre",
         "Basanti",
         "Mul Mul"
@@ -46,7 +42,7 @@
       ],
       "top_products": [
         "Judyth",
-        "Spring Fling", 
+        "Spring Fling",
         "Hannah",
         "Mocha",
         "Camellia",

@@ -1,36 +1,36 @@
 class SupportWidget {
-    constructor(storeId, options = {}) {
-        this.storeId = storeId;
-        this.apiUrl = 'https://customer-support-agent-y6qb.onrender.com';
-        this.conversationId = 'new';
-        this.isOpen = false;
-        this.isTyping = false;
-        
-        // New properties for WhatsApp handoff
-        this.customerEmail = null;
-        this.customerPhone = null;
-        this.awaitingContact = false;
-        this.pendingUrgentMessage = null;
-        
-        this.init();
-    }
+  constructor(storeId, options = {}) {
+    this.storeId = storeId;
+    this.apiUrl = "https://customer-support-agent-y6qb.onrender.com";
+    this.conversationId = "new";
+    this.isOpen = false;
+    this.isTyping = false;
 
-    init() {
-        this.injectStyles();
-        this.createButton();
-        this.createChatWindow();
+    // New properties for WhatsApp handoff
+    this.customerEmail = null;
+    this.customerPhone = null;
+    this.awaitingContact = false;
+    this.pendingUrgentMessage = null;
 
-        document.getElementById('chat-input').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                this.sendMessage();
-            }
-        });
-    }
+    this.init();
+  }
 
-    injectStyles() {
-        const style = document.createElement('style');
-        style.textContent = `
+  init() {
+    this.injectStyles();
+    this.createButton();
+    this.createChatWindow();
+
+    document.getElementById("chat-input").addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        this.sendMessage();
+      }
+    });
+  }
+
+  injectStyles() {
+    const style = document.createElement("style");
+    style.textContent = `
             @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
 
             :root {
@@ -416,14 +416,14 @@ class SupportWidget {
                 opacity: 0.9;
             }
         `;
-        document.head.appendChild(style);
-    }
+    document.head.appendChild(style);
+  }
 
-    createButton() {
-        const btn = document.createElement('button');
-        btn.id = 'sw-btn';
-        btn.setAttribute('aria-label', 'Open support chat');
-        btn.innerHTML = `
+  createButton() {
+    const btn = document.createElement("button");
+    btn.id = "sw-btn";
+    btn.setAttribute("aria-label", "Open support chat");
+    btn.innerHTML = `
             <svg class="sw-icon-open" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
             </svg>
@@ -431,14 +431,14 @@ class SupportWidget {
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
         `;
-        btn.onclick = () => this.toggleChat();
-        document.body.appendChild(btn);
-        this.btn = btn;
-    }
+    btn.onclick = () => this.toggleChat();
+    document.body.appendChild(btn);
+    this.btn = btn;
+  }
 
-    createChatWindow() {
-        const container = document.createElement('div');
-        container.innerHTML = `
+  createChatWindow() {
+    const container = document.createElement("div");
+    container.innerHTML = `
             <div id="sw-window" role="dialog" aria-label="Customer Support">
                 <div id="sw-header">
                     <div class="sw-avatar">
@@ -496,229 +496,252 @@ class SupportWidget {
                 </div>
             </div>
         `;
-        document.body.appendChild(container);
+    document.body.appendChild(container);
 
-        this.window = document.getElementById('sw-window');
-        document.getElementById('sw-close').onclick = () => this.toggleChat();
-        document.getElementById('sw-send').onclick = () => this.sendMessage();
+    this.window = document.getElementById("sw-window");
+    document.getElementById("sw-close").onclick = () => this.toggleChat();
+    document.getElementById("sw-send").onclick = () => this.sendMessage();
+  }
+
+  async sendMessage() {
+    const input = document.getElementById("chat-input");
+    const message = input.value.trim();
+    if (!message || this.isTyping) return;
+
+    // If we're awaiting contact info
+    if (this.awaitingContact) {
+      this.handleContactInput(message);
+      return;
     }
 
-    async sendMessage() {
-        const input = document.getElementById('chat-input');
-        const message = input.value.trim();
-        if (!message || this.isTyping) return;
+    // Check for urgency
+    const urgentKeywords = [
+      "urgent",
+      "emergency",
+      "asap",
+      "immediately",
+      "quick",
+      "speak to human",
+      "talk to person",
+      "real person",
+      "help me now",
+      "right now",
+      "joldi",
+      "fast",
+      "quickly",
+      "problem",
+      "issue",
+      "serious",
+      "critical",
+      "important",
+    ];
 
-        // If we're awaiting contact info
-        if (this.awaitingContact) {
-            this.handleContactInput(message);
-            return;
-        }
+    const isUrgent = urgentKeywords.some((keyword) =>
+      message.toLowerCase().includes(keyword),
+    );
 
-        // Check for urgency
-        const urgentKeywords = [
-            'urgent', 'emergency', 'asap', 'immediately', 'quick',
-            'speak to human', 'talk to person', 'real person',
-            'help me now', 'right now', 'joldi', 'fast', 'quickly',
-            'problem', 'issue', 'serious', 'critical', 'important'
-        ];
-        
-        const isUrgent = urgentKeywords.some(keyword => 
-            message.toLowerCase().includes(keyword)
-        );
+    // Show user message
+    this.addMessage("user", message);
+    input.value = "";
+    input.style.height = "20px";
 
-        // Show user message
-        this.addMessage('user', message);
-        input.value = '';
-        input.style.height = '20px';
+    const sendBtn = document.getElementById("sw-send");
+    sendBtn.disabled = true;
+    this.isTyping = true;
+    this.showTyping(true);
 
-        const sendBtn = document.getElementById('sw-send');
-        sendBtn.disabled = true;
-        this.isTyping = true;
-        this.showTyping(true);
+    // If urgent but no contact info, we'll let the API handle it
+    // The API will respond with ask_contact if needed
+    await this.callAPI(message, isUrgent);
 
-        // If urgent but no contact info, we'll let the API handle it
-        // The API will respond with ask_contact if needed
-        await this.callAPI(message, isUrgent);
+    sendBtn.disabled = false;
+  }
 
-        sendBtn.disabled = false;
+  async callAPI(message, isUrgent) {
+    try {
+      const response = await fetch(`${this.apiUrl}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message,
+          conversation_id: this.conversationId,
+          store_id: this.storeId,
+          email: this.customerEmail,
+          phone: this.customerPhone,
+          urgent: isUrgent,
+        }),
+      });
+
+      const data = await response.json();
+      this.conversationId = data.conversation_id;
+
+      this.showTyping(false);
+
+      // If asking for contact info
+      if (data.ask_contact) {
+        this.awaitingContact = true;
+        this.pendingUrgentMessage = message;
+        this.addMessage("bot", data.response);
+        this.showContactForm();
+      }
+      // If handoff initiated
+      else if (data.handoff_initiated) {
+        this.addMessage("bot", data.response);
+        this.showConfirmation();
+      } else {
+        this.addMessage("bot", data.response);
+      }
+    } catch (error) {
+      this.showTyping(false);
+      this.addMessage(
+        "bot",
+        "Something went wrong. Please try again in a moment or call us directly.",
+      );
+      console.error("Chat error:", error);
+    } finally {
+      this.isTyping = false;
+      document.getElementById("sw-send").disabled = false;
     }
+  }
 
-    async callAPI(message, isUrgent) {
-        try {
-            const response = await fetch(`${this.apiUrl}/chat`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    message, 
-                    conversation_id: this.conversationId,
-                    store_id: this.storeId,
-                    email: this.customerEmail,
-                    phone: this.customerPhone,
-                    urgent: isUrgent
-                })
-            });
-            
-            const data = await response.json();
-            this.conversationId = data.conversation_id;
-            
-            this.showTyping(false);
-            
-            // If asking for contact info
-            if (data.ask_contact) {
-                this.awaitingContact = true;
-                this.pendingUrgentMessage = message;
-                this.addMessage('bot', data.response);
-                this.showContactForm();
-            }
-            // If handoff initiated
-            else if (data.handoff_initiated) {
-                this.addMessage('bot', data.response);
-                this.showConfirmation();
-            }
-            else {
-                this.addMessage('bot', data.response);
-            }
-            
-        } catch (error) {
-            this.showTyping(false);
-            this.addMessage('bot', 'Something went wrong. Please try again in a moment or call us directly.');
-            console.error('Chat error:', error);
-        } finally {
-            this.isTyping = false;
-            document.getElementById('sw-send').disabled = false;
-        }
-    }
+  showContactForm() {
+    const messages = document.getElementById("chat-messages");
+    const typing = document.getElementById("sw-typing");
 
-    showContactForm() {
-        const messages = document.getElementById('chat-messages');
-        const typing = document.getElementById('sw-typing');
-        
-        const formDiv = document.createElement('div');
-        formDiv.className = 'sw-contact-form';
-        formDiv.innerHTML = `
+    const formDiv = document.createElement("div");
+    formDiv.className = "sw-contact-form";
+    formDiv.innerHTML = `
             <p>📞 How should our team contact you urgently?</p>
             <input type="email" id="contact-email" class="sw-contact-input" placeholder="Your email address" />
             <input type="tel" id="contact-phone" class="sw-contact-input" placeholder="Your WhatsApp number (with country code, e.g., +8801XXXXXXXXX)" />
             <button id="submit-contact" class="sw-contact-button">🚀 Notify Team Now</button>
             <div class="sw-contact-note">Or call us directly: +8801729103420</div>
         `;
-        
-        messages.insertBefore(formDiv, typing);
-        messages.scrollTop = messages.scrollHeight;
-        
-        document.getElementById('submit-contact').onclick = () => {
-            const email = document.getElementById('contact-email').value;
-            const phone = document.getElementById('contact-phone').value;
-            
-            if (email || phone) {
-                this.customerEmail = email;
-                this.customerPhone = phone;
-                this.awaitingContact = false;
-                formDiv.remove();
-                this.sendMessage(); // This will use the pending message
-            } else {
-                alert('Please provide at least one contact method');
-            }
-        };
-    }
 
-    showConfirmation() {
-        const messages = document.getElementById('chat-messages');
-        const typing = document.getElementById('sw-typing');
-        
-        const confirmDiv = document.createElement('div');
-        confirmDiv.className = 'sw-confirmation';
-        confirmDiv.innerHTML = `
+    messages.insertBefore(formDiv, typing);
+    messages.scrollTop = messages.scrollHeight;
+
+    document.getElementById("submit-contact").onclick = () => {
+      const email = document.getElementById("contact-email").value;
+      const phone = document.getElementById("contact-phone").value;
+
+      if (email || phone) {
+        this.customerEmail = email;
+        this.customerPhone = phone;
+        this.awaitingContact = false;
+        formDiv.remove();
+        this.sendMessage(); // This will use the pending message
+      } else {
+        alert("Please provide at least one contact method");
+      }
+    };
+  }
+
+  showConfirmation() {
+    const messages = document.getElementById("chat-messages");
+    const typing = document.getElementById("sw-typing");
+
+    const confirmDiv = document.createElement("div");
+    confirmDiv.className = "sw-confirmation";
+    confirmDiv.innerHTML = `
             <p>✅</p>
             <p style="font-weight:600;">Team Notified!</p>
             <p style="margin:8px 0;">Someone will contact you within 15 minutes.</p>
             <p style="font-size:11px;">Need faster? Call: +8801729103420</p>
         `;
-        
-        messages.insertBefore(confirmDiv, typing);
-        messages.scrollTop = messages.scrollHeight;
+
+    messages.insertBefore(confirmDiv, typing);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  handleContactInput(message) {
+    // Check if message looks like an email
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(message);
+    // Check if message looks like a phone number (with or without +)
+    const isPhone =
+      /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/.test(message);
+
+    if (isEmail) {
+      this.customerEmail = message;
+      this.awaitingContact = false;
+      this.addMessage("user", message);
+      document.getElementById("chat-input").value = "";
+      this.callAPI(
+        this.pendingUrgentMessage || "URGENT: Please contact me",
+        true,
+      );
+    } else if (isPhone) {
+      this.customerPhone = message;
+      this.awaitingContact = false;
+      this.addMessage("user", message);
+      document.getElementById("chat-input").value = "";
+      this.callAPI(
+        this.pendingUrgentMessage || "URGENT: Please contact me",
+        true,
+      );
+    } else {
+      this.addMessage(
+        "bot",
+        "Please provide a valid email or phone number (with country code, e.g., +8801XXXXXXXXX) so our team can contact you urgently.",
+      );
     }
+  }
 
-    handleContactInput(message) {
-        // Check if message looks like an email
-        const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(message);
-        // Check if message looks like a phone number (with or without +)
-        const isPhone = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/.test(message);
-        
-        if (isEmail) {
-            this.customerEmail = message;
-            this.awaitingContact = false;
-            this.addMessage('user', message);
-            document.getElementById('chat-input').value = '';
-            this.callAPI(this.pendingUrgentMessage || "URGENT: Please contact me", true);
-        } 
-        else if (isPhone) {
-            this.customerPhone = message;
-            this.awaitingContact = false;
-            this.addMessage('user', message);
-            document.getElementById('chat-input').value = '';
-            this.callAPI(this.pendingUrgentMessage || "URGENT: Please contact me", true);
-        }
-        else {
-            this.addMessage('bot', "Please provide a valid email or phone number (with country code, e.g., +8801XXXXXXXXX) so our team can contact you urgently.");
-        }
+  showTyping(show) {
+    const el = document.getElementById("sw-typing");
+    if (show) {
+      el.classList.add("visible");
+      const msgs = document.getElementById("chat-messages");
+      msgs.scrollTop = msgs.scrollHeight;
+    } else {
+      el.classList.remove("visible");
     }
+  }
 
-    showTyping(show) {
-        const el = document.getElementById('sw-typing');
-        if (show) {
-            el.classList.add('visible');
-            const msgs = document.getElementById('chat-messages');
-            msgs.scrollTop = msgs.scrollHeight;
-        } else {
-            el.classList.remove('visible');
-        }
-    }
+  addMessage(sender, text) {
+    const messages = document.getElementById("chat-messages");
+    const typing = document.getElementById("sw-typing");
 
-    addMessage(sender, text) {
-        const messages = document.getElementById('chat-messages');
-        const typing = document.getElementById('sw-typing');
+    const div = document.createElement("div");
+    div.className = `sw-msg ${sender}`;
 
-        const div = document.createElement('div');
-        div.className = `sw-msg ${sender}`;
+    const avatarIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>`;
+    const userIcon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8b879e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>`;
 
-        const avatarIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>`;
-        const userIcon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8b879e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>`;
-
-        div.innerHTML = `
-            <div class="sw-msg-avatar">${sender === 'bot' ? avatarIcon : userIcon}</div>
+    div.innerHTML = `
+            <div class="sw-msg-avatar">${sender === "bot" ? avatarIcon : userIcon}</div>
             <div class="sw-bubble">${this.escapeHtml(text)}</div>
         `;
 
-        messages.insertBefore(div, typing);
-        messages.scrollTop = messages.scrollHeight;
-    }
+    messages.insertBefore(div, typing);
+    messages.scrollTop = messages.scrollHeight;
+  }
 
-    escapeHtml(text) {
-        return text
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
-    }
+  escapeHtml(text) {
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
 
-    toggleChat() {
-        this.isOpen = !this.isOpen;
-        this.window.classList.toggle('open', this.isOpen);
-        this.btn.classList.toggle('open', this.isOpen);
-        if (this.isOpen) {
-            setTimeout(() => document.getElementById('chat-input').focus(), 300);
-        }
+  toggleChat() {
+    this.isOpen = !this.isOpen;
+    this.window.classList.toggle("open", this.isOpen);
+    this.btn.classList.toggle("open", this.isOpen);
+    if (this.isOpen) {
+      setTimeout(() => document.getElementById("chat-input").focus(), 300);
     }
+  }
 }
 
 // Initialize widget when page loads
-document.addEventListener('DOMContentLoaded', () => {
-    // You can change store ID and options here
-    window.supportWidget = new SupportWidget('prism_the_store_001', {
-        storeName: 'Prism The Store',
-        primaryColor: '#304237',
-        secondaryColor: '#C4A467'
-    });
+document.addEventListener("DOMContentLoaded", () => {
+  // You can change store ID and options here
+  window.supportWidget = new SupportWidget("prism_the_store_001", {
+    storeName: "Prism The Store",
+    primaryColor: "#304237",
+    secondaryColor: "#C4A467",
+  });
 });
