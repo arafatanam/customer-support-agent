@@ -3,6 +3,17 @@
     "store_id": "prism_the_store_001",
     "name": "Prism The Store",
     "website": "www.prismthestore.com",
+    "whatsapp": {
+      "enabled": true,
+      "group_name": "Prism Support Team",
+      "team_members": [
+        "+8801729103420",
+        "+8801890312221",
+        "+8801713162795"
+      ],
+      "business_hours": "10 AM to 10 PM",
+      "response_time": "15 minutes"
+    },
     "about": {
       "founded": 2018,
       "founder": "Tamanna Ahmed",
@@ -64,7 +75,6 @@
       "primary_phone": "+8801729103420",
       "secondary_phone": "+8801890312221",
       "email": "info@prismthestore.com",
-      "support_hours": "10 AM to 10 PM (Bangladesh Time)",
       "social_media": {
         "facebook": "https://www.facebook.com/prismthestore/",
         "instagram": "https://www.instagram.com/prismthestore"
