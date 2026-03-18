@@ -5,6 +5,13 @@ class SupportWidget {
         this.conversationId = 'new';
         this.isOpen = false;
         this.isTyping = false;
+        
+        // New properties for WhatsApp handoff
+        this.customerEmail = null;
+        this.customerPhone = null;
+        this.awaitingContact = false;
+        this.pendingUrgentMessage = null;
+        
         this.init();
     }
 
@@ -330,6 +337,84 @@ class SupportWidget {
                 letter-spacing: 0.02em;
             }
             .sw-footer-note span { color: var(--sw-accent2); }
+
+            /* WhatsApp handoff styles */
+            .sw-contact-form {
+                background: var(--sw-surface2);
+                padding: 16px;
+                border-radius: 16px;
+                margin: 8px 0;
+                border: 1px solid var(--sw-border);
+                animation: sw-msg-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            .sw-contact-form p {
+                color: var(--sw-text);
+                font-size: 14px;
+                margin-bottom: 12px;
+                font-weight: 500;
+            }
+            .sw-contact-input {
+                width: 100%;
+                padding: 10px 12px;
+                background: var(--sw-bg);
+                border: 1px solid var(--sw-border);
+                border-radius: 10px;
+                color: var(--sw-text);
+                font-family: var(--sw-font);
+                font-size: 14px;
+                margin-bottom: 10px;
+                box-sizing: border-box;
+            }
+            .sw-contact-input:focus {
+                outline: none;
+                border-color: var(--sw-accent);
+                box-shadow: 0 0 0 3px rgba(124,106,247,0.1);
+            }
+            .sw-contact-button {
+                width: 100%;
+                padding: 12px;
+                background: linear-gradient(135deg, #7c6af7, #a78bfa);
+                border: none;
+                border-radius: 10px;
+                color: white;
+                font-family: var(--sw-font);
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
+                box-shadow: 0 4px 12px rgba(124,106,247,0.3);
+                margin-bottom: 8px;
+            }
+            .sw-contact-button:hover {
+                transform: scale(1.02);
+                box-shadow: 0 6px 16px rgba(124,106,247,0.4);
+            }
+            .sw-contact-note {
+                font-size: 11px;
+                color: var(--sw-muted);
+                text-align: center;
+                margin-top: 8px;
+            }
+            .sw-confirmation {
+                background: linear-gradient(135deg, #10b981, #34d399);
+                color: white;
+                padding: 16px;
+                border-radius: 16px;
+                margin: 8px 0;
+                text-align: center;
+                animation: pulse 1s;
+            }
+            .sw-confirmation p {
+                margin: 4px 0;
+            }
+            .sw-confirmation p:first-child {
+                font-size: 24px;
+                margin-bottom: 8px;
+            }
+            .sw-confirmation p:last-child {
+                font-size: 12px;
+                opacity: 0.9;
+            }
         `;
         document.head.appendChild(style);
     }
@@ -385,8 +470,10 @@ class SupportWidget {
                         <div class="sw-bubble">Hi there! I'm here to help. Ask me anything about your orders, shipping, or returns.</div>
                     </div>
                     <div id="sw-typing">
-                        <div class="sw-msg-avatar sw-msg-avatar--bot" style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#7c6af7,#a78bfa);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+                        <div class="sw-msg-avatar">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/>
+                            </svg>
                         </div>
                         <div class="sw-typing-bubble">
                             <div class="sw-typing-dot"></div>
@@ -399,7 +486,7 @@ class SupportWidget {
                 <div id="sw-footer">
                     <div id="sw-input-row">
                         <input id="chat-input" type="text" placeholder="Ask me anything…" autocomplete="off" />
-                        <button id="sw-send" onclick="window.supportWidget.sendMessage()" aria-label="Send message">
+                        <button id="sw-send" aria-label="Send message">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
                             </svg>
@@ -413,6 +500,7 @@ class SupportWidget {
 
         this.window = document.getElementById('sw-window');
         document.getElementById('sw-close').onclick = () => this.toggleChat();
+        document.getElementById('sw-send').onclick = () => this.sendMessage();
     }
 
     async sendMessage() {
@@ -420,6 +508,25 @@ class SupportWidget {
         const message = input.value.trim();
         if (!message || this.isTyping) return;
 
+        // If we're awaiting contact info
+        if (this.awaitingContact) {
+            this.handleContactInput(message);
+            return;
+        }
+
+        // Check for urgency
+        const urgentKeywords = [
+            'urgent', 'emergency', 'asap', 'immediately', 'quick',
+            'speak to human', 'talk to person', 'real person',
+            'help me now', 'right now', 'joldi', 'fast', 'quickly',
+            'problem', 'issue', 'serious', 'critical', 'important'
+        ];
+        
+        const isUrgent = urgentKeywords.some(keyword => 
+            message.toLowerCase().includes(keyword)
+        );
+
+        // Show user message
         this.addMessage('user', message);
         input.value = '';
         input.style.height = '20px';
@@ -429,23 +536,131 @@ class SupportWidget {
         this.isTyping = true;
         this.showTyping(true);
 
+        // If urgent but no contact info, we'll let the API handle it
+        // The API will respond with ask_contact if needed
+        await this.callAPI(message, isUrgent);
+
+        sendBtn.disabled = false;
+    }
+
+    async callAPI(message, isUrgent) {
         try {
             const response = await fetch(`${this.apiUrl}/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message, conversation_id: this.conversationId })
+                body: JSON.stringify({ 
+                    message, 
+                    conversation_id: this.conversationId,
+                    store_id: this.storeId,
+                    email: this.customerEmail,
+                    phone: this.customerPhone,
+                    urgent: isUrgent
+                })
             });
+            
             const data = await response.json();
             this.conversationId = data.conversation_id;
+            
             this.showTyping(false);
-            this.addMessage('bot', data.response);
+            
+            // If asking for contact info
+            if (data.ask_contact) {
+                this.awaitingContact = true;
+                this.pendingUrgentMessage = message;
+                this.addMessage('bot', data.response);
+                this.showContactForm();
+            }
+            // If handoff initiated
+            else if (data.handoff_initiated) {
+                this.addMessage('bot', data.response);
+                this.showConfirmation();
+            }
+            else {
+                this.addMessage('bot', data.response);
+            }
+            
         } catch (error) {
             this.showTyping(false);
-            this.addMessage('bot', 'Something went wrong. Please try again in a moment.');
+            this.addMessage('bot', 'Something went wrong. Please try again in a moment or call us directly.');
             console.error('Chat error:', error);
         } finally {
-            sendBtn.disabled = false;
             this.isTyping = false;
+            document.getElementById('sw-send').disabled = false;
+        }
+    }
+
+    showContactForm() {
+        const messages = document.getElementById('chat-messages');
+        const typing = document.getElementById('sw-typing');
+        
+        const formDiv = document.createElement('div');
+        formDiv.className = 'sw-contact-form';
+        formDiv.innerHTML = `
+            <p>📞 How should our team contact you urgently?</p>
+            <input type="email" id="contact-email" class="sw-contact-input" placeholder="Your email address" />
+            <input type="tel" id="contact-phone" class="sw-contact-input" placeholder="Your WhatsApp number (with country code, e.g., +8801XXXXXXXXX)" />
+            <button id="submit-contact" class="sw-contact-button">🚀 Notify Team Now</button>
+            <div class="sw-contact-note">Or call us directly: +8801729103420</div>
+        `;
+        
+        messages.insertBefore(formDiv, typing);
+        messages.scrollTop = messages.scrollHeight;
+        
+        document.getElementById('submit-contact').onclick = () => {
+            const email = document.getElementById('contact-email').value;
+            const phone = document.getElementById('contact-phone').value;
+            
+            if (email || phone) {
+                this.customerEmail = email;
+                this.customerPhone = phone;
+                this.awaitingContact = false;
+                formDiv.remove();
+                this.sendMessage(); // This will use the pending message
+            } else {
+                alert('Please provide at least one contact method');
+            }
+        };
+    }
+
+    showConfirmation() {
+        const messages = document.getElementById('chat-messages');
+        const typing = document.getElementById('sw-typing');
+        
+        const confirmDiv = document.createElement('div');
+        confirmDiv.className = 'sw-confirmation';
+        confirmDiv.innerHTML = `
+            <p>✅</p>
+            <p style="font-weight:600;">Team Notified!</p>
+            <p style="margin:8px 0;">Someone will contact you within 15 minutes.</p>
+            <p style="font-size:11px;">Need faster? Call: +8801729103420</p>
+        `;
+        
+        messages.insertBefore(confirmDiv, typing);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    handleContactInput(message) {
+        // Check if message looks like an email
+        const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(message);
+        // Check if message looks like a phone number (with or without +)
+        const isPhone = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/.test(message);
+        
+        if (isEmail) {
+            this.customerEmail = message;
+            this.awaitingContact = false;
+            this.addMessage('user', message);
+            document.getElementById('chat-input').value = '';
+            this.callAPI(this.pendingUrgentMessage || "URGENT: Please contact me", true);
+        } 
+        else if (isPhone) {
+            this.customerPhone = message;
+            this.awaitingContact = false;
+            this.addMessage('user', message);
+            document.getElementById('chat-input').value = '';
+            this.callAPI(this.pendingUrgentMessage || "URGENT: Please contact me", true);
+        }
+        else {
+            this.addMessage('bot', "Please provide a valid email or phone number (with country code, e.g., +8801XXXXXXXXX) so our team can contact you urgently.");
         }
     }
 
@@ -498,6 +713,12 @@ class SupportWidget {
     }
 }
 
+// Initialize widget when page loads
 document.addEventListener('DOMContentLoaded', () => {
-    window.supportWidget = new SupportWidget('store-123');
+    // You can change store ID and options here
+    window.supportWidget = new SupportWidget('prism_the_store_001', {
+        storeName: 'Prism The Store',
+        primaryColor: '#304237',
+        secondaryColor: '#C4A467'
+    });
 });
