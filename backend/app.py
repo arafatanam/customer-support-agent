@@ -25,8 +25,6 @@ groq_client = Groq(api_key=groq_api_key)
 supabase = create_client(supabase_url, supabase_key)
 
 # Load store configurations
-
-
 def load_store_configs():
     try:
         with open('stores_config.json', 'r') as f:
