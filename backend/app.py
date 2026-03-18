@@ -1,9 +1,14 @@
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 from supabase import create_client
 import json
 from groq import Groq
+from whatsapp_handler import whatsapp_handler
+import threading
+from datetime import datetime
+import time
 
 app = Flask(__name__)
 CORS(app)
@@ -165,6 +170,101 @@ def test_groq():
             max_tokens=10
         )
         return jsonify({'status': 'success', 'message': response.choices[0].message.content})
+
+# Initialize WhatsApp on startup
+def init_whatsapp():
+    """Initialize WhatsApp web on server start"""
+    if whatsapp_handler.start_driver():
+        if whatsapp_handler.wait_for_login():
+            print("✅ WhatsApp ready!")
+            
+            # Create groups for all stores
+            for store_id, config in STORE_CONFIGS.items():
+                if 'whatsapp' in config and config['whatsapp']['enabled']:
+                    group_name = config['whatsapp']['group_name']
+                    members = config['whatsapp']['team_members']
+                    
+                    # Create group if doesn't exist
+                    if group_name not in whatsapp_handler.group_names.values():
+                        whatsapp_handler.create_or_get_group(
+                            store_id, 
+                            group_name, 
+                            members
+                        )
+            
+            print("✅ All WhatsApp groups ready!")
+        else:
+            print("❌ Please scan QR code in the console")
+    else:
+        print("❌ Failed to start WhatsApp")
+
+# Start WhatsApp in background thread
+threading.Thread(target=init_whatsapp, daemon=True).start()
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    try:
+        data = request.json
+        message = data.get('message', '')
+        conversation_id = data.get('conversation_id', 'new')
+        store_id = data.get('store_id', 'default')
+        customer_email = data.get('email', '')
+        customer_phone = data.get('phone', '')
+        
+        store_config = STORE_CONFIGS.get(store_id, {})
+        
+        # URGENCY DETECTION
+        urgent_keywords = [
+            'urgent', 'emergency', 'asap', 'immediately', 'quick',
+            'speak to human', 'talk to person', 'real person',
+            'help me now', 'right now', 'instant', 'immediate',
+            'joldi', 'fast', 'quickly', 'problem', 'issue'
+        ]
+        
+        is_urgent = any(keyword in message.lower() for keyword in urgent_keywords)
+        
+        # If urgent and WhatsApp is enabled
+        if is_urgent and store_config.get('whatsapp', {}).get('enabled'):
+            
+            # If no email/phone provided, ask for it
+            if not customer_email and not customer_phone:
+                return jsonify({
+                    'response': "I understand this is urgent! To connect you with our team immediately, please provide your email or phone number:",
+                    'conversation_id': conversation_id,
+                    'ask_contact': True
+                })
+            
+            # Send to WhatsApp group
+            customer_info = {
+                'store_name': store_config['name'],
+                'email': customer_email or 'Not provided',
+                'phone': customer_phone or 'Not provided',
+                'urgent_message': message,
+                'conversation_id': conversation_id,
+                'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            }
+            
+            # Send to WhatsApp group
+            group_name = store_config['whatsapp']['group_name']
+            success = whatsapp_handler.send_urgent_alert(
+                store_id, 
+                group_name, 
+                customer_info
+            )
+            
+            if success:
+                return jsonify({
+                    'response': f"✅ Our team has been notified urgently! Someone from Prism will contact you at {customer_email or customer_phone} within {store_config['whatsapp']['response_time']}. You can also call us directly at {store_config['contact']['primary_phone']}",
+                    'conversation_id': conversation_id,
+                    'handoff_initiated': True
+                })
+            else:
+                return jsonify({
+                    'response': f"I'm trying to reach our team urgently. Please call us directly at {store_config['contact']['primary_phone']} for immediate help.",
+                    'conversation_id': conversation_id,
+                    'handoff_fallback': True
+                })
+
     except Exception as e:
         return jsonify({'status': 'error', 'error': str(e)}), 500
 
