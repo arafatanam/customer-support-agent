@@ -6,7 +6,7 @@ class SupportWidget {
     this.isOpen = false;
     this.isTyping = false;
 
-    // New properties for WhatsApp handoff
+    // Properties for Telegram handoff
     this.customerEmail = null;
     this.customerPhone = null;
     this.awaitingContact = false;
@@ -338,7 +338,7 @@ class SupportWidget {
             }
             .sw-footer-note span { color: var(--sw-accent2); }
 
-            /* WhatsApp handoff styles */
+            /* Telegram handoff styles */
             .sw-contact-form {
                 background: var(--sw-surface2);
                 padding: 16px;
@@ -414,6 +414,11 @@ class SupportWidget {
             .sw-confirmation p:last-child {
                 font-size: 12px;
                 opacity: 0.9;
+            }
+            @keyframes pulse {
+                0% { transform: scale(0.95); opacity: 0.7; }
+                70% { transform: scale(1); opacity: 1; }
+                100% { transform: scale(1); opacity: 1; }
             }
         `;
     document.head.appendChild(style);
@@ -514,30 +519,18 @@ class SupportWidget {
       return;
     }
 
-    // Check for urgency
+    // Check for urgency (keywords that trigger human handoff)
     const urgentKeywords = [
-      "urgent",
-      "emergency",
-      "asap",
-      "immediately",
-      "quick",
-      "speak to human",
-      "talk to person",
-      "real person",
-      "help me now",
-      "right now",
-      "joldi",
-      "fast",
-      "quickly",
-      "problem",
-      "issue",
-      "serious",
-      "critical",
-      "important",
+      "urgent", "emergency", "asap", "immediately", "quick",
+      "speak to human", "talk to person", "real person",
+      "help me now", "right now", "joldi", "fast", "quickly",
+      "problem", "issue", "serious", "critical", "important",
+      "track order", "where is my order", "delivery status",
+      "complaint", "not working", "wrong item", "mistake"
     ];
 
     const isUrgent = urgentKeywords.some((keyword) =>
-      message.toLowerCase().includes(keyword),
+      message.toLowerCase().includes(keyword)
     );
 
     // Show user message
@@ -550,8 +543,6 @@ class SupportWidget {
     this.isTyping = true;
     this.showTyping(true);
 
-    // If urgent but no contact info, we'll let the API handle it
-    // The API will respond with ask_contact if needed
     await this.callAPI(message, isUrgent);
 
     sendBtn.disabled = false;
@@ -588,14 +579,19 @@ class SupportWidget {
       else if (data.handoff_initiated) {
         this.addMessage("bot", data.response);
         this.showConfirmation();
-      } else {
+      }
+      // If handoff already active
+      else if (data.handoff_active) {
+        this.addMessage("bot", data.response);
+      }
+      else {
         this.addMessage("bot", data.response);
       }
     } catch (error) {
       this.showTyping(false);
       this.addMessage(
         "bot",
-        "Something went wrong. Please try again in a moment or call us directly.",
+        "Something went wrong. Please try again in a moment or call us directly at +8801729103420.",
       );
       console.error("Chat error:", error);
     } finally {
@@ -611,11 +607,11 @@ class SupportWidget {
     const formDiv = document.createElement("div");
     formDiv.className = "sw-contact-form";
     formDiv.innerHTML = `
-            <p>📞 How should our team contact you urgently?</p>
+            <p>📱 How should our team contact you urgently?</p>
             <input type="email" id="contact-email" class="sw-contact-input" placeholder="Your email address" />
-            <input type="tel" id="contact-phone" class="sw-contact-input" placeholder="Your WhatsApp number (with country code, e.g., +8801XXXXXXXXX)" />
-            <button id="submit-contact" class="sw-contact-button">🚀 Notify Team Now</button>
-            <div class="sw-contact-note">Or call us directly: +8801729103420</div>
+            <input type="tel" id="contact-phone" class="sw-contact-input" placeholder="Your phone number (e.g., +8801XXXXXXXXX)" />
+            <button id="submit-contact" class="sw-contact-button">🚀 Notify Team on Telegram</button>
+            <div class="sw-contact-note">Our support team will contact you within 15 minutes via Telegram or phone</div>
         `;
 
     messages.insertBefore(formDiv, typing);
@@ -630,7 +626,7 @@ class SupportWidget {
         this.customerPhone = phone;
         this.awaitingContact = false;
         formDiv.remove();
-        this.sendMessage(); // This will use the pending message
+        this.sendMessage(); // This will use the pending urgent message
       } else {
         alert("Please provide at least one contact method");
       }
@@ -645,7 +641,7 @@ class SupportWidget {
     confirmDiv.className = "sw-confirmation";
     confirmDiv.innerHTML = `
             <p>✅</p>
-            <p style="font-weight:600;">Team Notified!</p>
+            <p style="font-weight:600;">Team Notified on Telegram!</p>
             <p style="margin:8px 0;">Someone will contact you within 15 minutes.</p>
             <p style="font-size:11px;">Need faster? Call: +8801729103420</p>
         `;
@@ -738,7 +734,6 @@ class SupportWidget {
 
 // Initialize widget when page loads
 document.addEventListener("DOMContentLoaded", () => {
-  // You can change store ID and options here
   window.supportWidget = new SupportWidget("prism_the_store_001", {
     storeName: "Prism The Store",
     primaryColor: "#304237",
