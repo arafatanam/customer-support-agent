@@ -6,6 +6,7 @@
     "telegram": {
       "enabled": true,
       "bot_token": "8651304807:AAHfdlnbPZr0sOKHc6RuA0MHVOGoDC-hWM4",
+      "bot_username": "prismthestore_support_bot",
       "group_chat_id": -3755488743,
       "group_link": "https://t.me/+chm-iBN2fYUwZTY1",
       "team_handoff": true,
