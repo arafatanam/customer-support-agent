@@ -25,31 +25,6 @@ supabase = create_client(supabase_url, supabase_key)
 # Store active handoffs
 ACTIVE_HANDOFFS = {}
 
-# Add this function near the top with other imports
-def set_conversation_state(conversation_id, state, value):
-    """Store conversation state in Supabase"""
-    try:
-        supabase.table('conversations')\
-            .update({'metadata': {state: value}})\
-            .eq('id', conversation_id)\
-            .execute()
-    except Exception as e:
-        print(f"Error setting state: {e}")
-
-def get_conversation_state(conversation_id, state):
-    """Get conversation state from Supabase"""
-    try:
-        result = supabase.table('conversations')\
-            .select('metadata')\
-            .eq('id', conversation_id)\
-            .execute()
-        if result.data and result.data[0].get('metadata'):
-            return result.data[0]['metadata'].get(state)
-        return None
-    except Exception as e:
-        print(f"Error getting state: {e}")
-        return None
-
 # Load store configurations
 def load_store_configs():
     try:
@@ -69,6 +44,40 @@ def load_store_configs():
         }
 
 STORE_CONFIGS = load_store_configs()
+
+def set_conversation_state(conversation_id, state, value):
+    """Store conversation state in Supabase"""
+    try:
+        # First get existing metadata
+        result = supabase.table('conversations')\
+            .select('metadata')\
+            .eq('id', conversation_id)\
+            .execute()
+        
+        existing_metadata = result.data[0].get('metadata', {}) if result.data else {}
+        existing_metadata[state] = value
+        
+        # Update with new metadata
+        supabase.table('conversations')\
+            .update({'metadata': existing_metadata})\
+            .eq('id', conversation_id)\
+            .execute()
+    except Exception as e:
+        print(f"Error setting state: {e}")
+
+def get_conversation_state(conversation_id, state):
+    """Get conversation state from Supabase"""
+    try:
+        result = supabase.table('conversations')\
+            .select('metadata')\
+            .eq('id', conversation_id)\
+            .execute()
+        if result.data and result.data[0].get('metadata'):
+            return result.data[0]['metadata'].get(state)
+        return None
+    except Exception as e:
+        print(f"Error getting state: {e}")
+        return None
 
 def send_telegram_alert(bot_token, group_chat_id, customer_info, store_name, store_phone):
     """Send urgent alert to Telegram group"""
@@ -108,7 +117,6 @@ Click below to handle this customer:
     
     try:
         response = requests.post(url, json=data, timeout=10)
-        print(f"Telegram response: {response.json()}")
         return response.json()
     except Exception as e:
         print(f"Telegram error: {e}")
@@ -180,7 +188,9 @@ def chat():
         print(f"Telegram enabled: {store_config.get('telegram', {}).get('enabled', False)}")
         
         # Check if this conversation is waiting for contact info
-        waiting_for_contact = get_conversation_state(conversation_id, 'waiting_for_contact')
+        waiting_for_contact = False
+        if conversation_id != 'new':
+            waiting_for_contact = get_conversation_state(conversation_id, 'waiting_for_contact')
         print(f"Waiting for contact: {waiting_for_contact}")
         
         # If waiting for contact, capture the phone/email
@@ -199,14 +209,14 @@ def chat():
                 urgent_message = get_conversation_state(conversation_id, 'urgent_message') or "URGENT: Please contact me"
                 
                 # Send to Telegram with the contact info
-                customer_phone = message if is_phone else customer_phone
-                customer_email = message if is_email else customer_email
+                phone_number = message if is_phone else customer_phone
+                email_address = message if is_email else customer_email
                 
                 telegram_config = store_config.get('telegram', {})
                 if telegram_config.get('enabled'):
                     customer_info = {
-                        'email': customer_email or 'Not provided',
-                        'phone': customer_phone or 'Not provided',
+                        'email': email_address or 'Not provided',
+                        'phone': phone_number or 'Not provided',
                         'message': urgent_message,
                         'conversation_id': conversation_id
                     }
@@ -244,8 +254,20 @@ def chat():
         
         is_urgent = any(keyword in message.lower() for keyword in urgent_keywords)
         
+        # ORDER TRACKING detection
+        order_keywords = ['order', 'track', 'where', 'parcel', 'delivery', 'shipping', 'received']
+        is_order_query = any(word in message.lower() for word in order_keywords)
+        
         # If urgent and Telegram enabled, set waiting state
-        if is_urgent and store_config.get('telegram', {}).get('enabled') and conversation_id != 'new':
+        if is_urgent and store_config.get('telegram', {}).get('enabled'):
+            if conversation_id == 'new':
+                # First create conversation
+                messages = [{"role": "system", "content": "Welcome to Prism The Store support."}]
+                result = supabase.table('conversations')\
+                    .insert({'messages': messages})\
+                    .execute()
+                conversation_id = result.data[0]['id']
+            
             # Set state to wait for contact info
             set_conversation_state(conversation_id, 'waiting_for_contact', True)
             set_conversation_state(conversation_id, 'urgent_message', message)
@@ -255,55 +277,16 @@ def chat():
                 'conversation_id': conversation_id,
                 'ask_contact': True
             })
-                    
-            # Send to Telegram
-            telegram_config = store_config['telegram']
-            customer_info = {
-                'email': customer_email or 'Not provided',
-                'phone': customer_phone or 'Not provided',
-                'message': message,
-                'conversation_id': conversation_id
-            }
-            
-            print(f"Sending to Telegram group: {telegram_config['group_chat_id']}")
-            result = send_telegram_alert(
-                telegram_config['bot_token'],
-                telegram_config['group_chat_id'],
-                customer_info,
-                store_config.get('name', 'Prism The Store'),
-                store_config.get('contact', {}).get('primary_phone', '+8801729103420')
-            )
-            
-            print(f"Telegram result: {result}")
-            
-            if result and result.get('ok'):
-                print("Telegram alert sent successfully!")
-                return jsonify({
-                    'response': f"✅ I've notified our team about your urgent request. Someone will contact you at {customer_email or customer_phone} within 15 minutes. You can also call us directly at {store_config.get('contact', {}).get('primary_phone', '+8801729103420')} for immediate assistance.",
-                    'conversation_id': conversation_id,
-                    'handoff_initiated': True
-                })
-            else:
-                print(f"Telegram failed: {result}")
-                return jsonify({
-                    'response': f"I'm trying to reach our team. Please call us directly at {store_config.get('contact', {}).get('primary_phone', '+8801729103420')} for immediate help.",
-                    'conversation_id': conversation_id,
-                    'handoff_fallback': True
-                })
         
-        # ========== HANDLE ORDER TRACKING ==========
+        # Handle order tracking (non-urgent)
         if is_order_query and not is_urgent:
             phone = store_config.get('contact', {}).get('primary_phone', '+8801729103420')
-            print("Order tracking detected - sending tracking message")
             return jsonify({
                 'response': f"I'd be happy to help you with your order. For order tracking, please contact our Dhaka store at {phone}. They'll be able to provide you with the most up-to-date information on your order status. If you have any other questions or concerns, feel free to ask, and I'll do my best to assist you.",
                 'conversation_id': conversation_id
             })
         
-        # ========== NORMAL AI CONVERSATION ==========
-        print("Normal conversation flow - using AI")
-        
-        # Create store-specific system prompt
+        # Normal conversation flow
         system_prompt = f"""You are a friendly, helpful customer support agent for {store_config.get('name', 'Prism The Store')}.
 
 Brand Voice: {store_config.get('brand', {}).get('voice', 'Warm, professional, and helpful')}
@@ -314,19 +297,11 @@ Store Information:
 - Email: {store_config.get('contact', {}).get('email', 'info@prismthestore.com')}
 - Hours: {store_config.get('contact', {}).get('support_hours', '10 AM to 10 PM')}
 
-About the Store:
-- Founded in 2018 by Tamanna Ahmed
-- Luxury multi-designer outlet
-- Locations in Dhaka and Chattogram
-
-Products: {', '.join(store_config.get('products', {}).get('top_products', []))}
-
 Important Rules:
 1. For order tracking, ALWAYS say: "For order tracking, please contact our Dhaka store at +8801729103420"
 2. If someone wants to talk to a human, ALWAYS offer: "I'll connect you with human support. Please call us at +8801729103420"
 3. Be warm and helpful, like a luxury boutique assistant
 4. Keep responses concise but friendly
-5. If you don't know something, offer the phone number for assistance
 
 Start conversations warmly. Example opening: "Welcome to Prism. How may I assist you today?" """
 
@@ -339,7 +314,10 @@ Start conversations warmly. Example opening: "Welcome to Prism. How may I assist
             messages = history.data[0]['messages'] if history.data else []
         else:
             messages = [{"role": "system", "content": system_prompt}]
-            conversation_id = create_conversation(system_prompt)
+            result = supabase.table('conversations')\
+                .insert({'messages': messages})\
+                .execute()
+            conversation_id = result.data[0]['id']
 
         # Add user message
         messages.append({"role": "user", "content": message})
@@ -372,12 +350,6 @@ Start conversations warmly. Example opening: "Welcome to Prism. How may I assist
         print(f"Chat error: {e}")
         return jsonify({'error': str(e)}), 500
 
-def create_conversation(system_prompt):
-    result = supabase.table('conversations')\
-        .insert({'messages': [{"role": "system", "content": system_prompt}]})\
-        .execute()
-    return result.data[0]['id']
-
 @app.route('/order-status', methods=['POST'])
 def order_status():
     try:
@@ -402,20 +374,6 @@ def test_groq():
         return jsonify({'status': 'success', 'message': response.choices[0].message.content})
     except Exception as e:
         return jsonify({'status': 'error', 'error': str(e)}), 500
-
-@app.route('/telegram-set-webhook', methods=['GET'])
-def set_webhook():
-    try:
-        bot_token = "8651304807:AAHfdlnbPZr0sOKHc6RuA0MHVOGoDC-hWM4"
-        webhook_url = "https://customer-support-agent-y6qb.onrender.com/telegram-webhook"
-        
-        url = f"https://api.telegram.org/bot{bot_token}/setWebhook"
-        data = {"url": webhook_url}
-        
-        response = requests.post(url, json=data)
-        return jsonify(response.json())
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
