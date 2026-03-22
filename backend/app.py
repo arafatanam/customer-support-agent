@@ -6,6 +6,7 @@ import json
 from groq import Groq
 from datetime import datetime
 import requests
+import re
 
 app = Flask(__name__)
 CORS(app)
@@ -23,6 +24,31 @@ supabase = create_client(supabase_url, supabase_key)
 
 # Store active handoffs
 ACTIVE_HANDOFFS = {}
+
+# Add this function near the top with other imports
+def set_conversation_state(conversation_id, state, value):
+    """Store conversation state in Supabase"""
+    try:
+        supabase.table('conversations')\
+            .update({'metadata': {state: value}})\
+            .eq('id', conversation_id)\
+            .execute()
+    except Exception as e:
+        print(f"Error setting state: {e}")
+
+def get_conversation_state(conversation_id, state):
+    """Get conversation state from Supabase"""
+    try:
+        result = supabase.table('conversations')\
+            .select('metadata')\
+            .eq('id', conversation_id)\
+            .execute()
+        if result.data and result.data[0].get('metadata'):
+            return result.data[0]['metadata'].get(state)
+        return None
+    except Exception as e:
+        print(f"Error getting state: {e}")
+        return None
 
 # Load store configurations
 def load_store_configs():
@@ -151,49 +177,85 @@ def chat():
         print(f"\n=== CHAT REQUEST ===")
         print(f"Message: {message}")
         print(f"Store ID: {store_id}")
-        print(f"Email: {customer_email}")
-        print(f"Phone: {customer_phone}")
         print(f"Telegram enabled: {store_config.get('telegram', {}).get('enabled', False)}")
         
-        # Check if already being handled by human
-        if conversation_id in ACTIVE_HANDOFFS and conversation_id != 'new':
-            handoff_info = ACTIVE_HANDOFFS[conversation_id]
-            print(f"Already handled by: {handoff_info['team_member_name']}")
-            return jsonify({
-                'response': f"✅ Our team member {handoff_info['team_member_name']} is now helping you. They will respond shortly. You can also call {store_config.get('contact', {}).get('primary_phone', '+8801729103420')} if urgent.",
-                'conversation_id': conversation_id,
-                'handoff_active': True
-            })
+        # Check if this conversation is waiting for contact info
+        waiting_for_contact = get_conversation_state(conversation_id, 'waiting_for_contact')
+        print(f"Waiting for contact: {waiting_for_contact}")
         
-        # URGENCY DETECTION - expanded list
-        urgent_keywords = [
-            'urgent', 'emergency', 'asap', 'immediately', 'quick',
-            'speak to human', 'talk to person', 'real person', 'talk to someone',
-            'help me now', 'right now', 'joldi', 'fast', 'quickly',
-            'problem', 'issue', 'serious', 'critical', 'important',
-            'human', 'person', 'agent', 'support team', 'someone',
-            'can i talk', 'can i speak', 'need help now', 'urgent help'
-        ]
-        
-        is_urgent = any(keyword in message.lower() for keyword in urgent_keywords)
-        print(f"Is urgent: {is_urgent}")
-        
-        # ORDER TRACKING
-        is_order_query = any(word in message.lower() for word in ['order', 'track', 'where', 'parcel', 'delivery', 'shipping', 'received'])
-        
-        # ========== PRIORITY: HANDLE URGENT WITH TELEGRAM ==========
-        if is_urgent and store_config.get('telegram', {}).get('enabled'):
-            print("URGENT DETECTED! Processing Telegram handoff...")
+        # If waiting for contact, capture the phone/email
+        if waiting_for_contact and conversation_id != 'new':
+            print("Capturing contact info from message")
             
-            # If no contact info, ask for it
-            if not customer_email and not customer_phone:
-                print("No contact info - asking for it")
+            # Check if message is a phone number (Bangladesh format)
+            is_phone = bool(re.match(r'^(?:\+8801|01)[3-9]\d{8}$|^\d{11}$', message))
+            is_email = bool(re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', message))
+            
+            if is_phone or is_email:
+                # Clear the waiting state
+                set_conversation_state(conversation_id, 'waiting_for_contact', False)
+                
+                # Get the stored urgent message
+                urgent_message = get_conversation_state(conversation_id, 'urgent_message') or "URGENT: Please contact me"
+                
+                # Send to Telegram with the contact info
+                customer_phone = message if is_phone else customer_phone
+                customer_email = message if is_email else customer_email
+                
+                telegram_config = store_config.get('telegram', {})
+                if telegram_config.get('enabled'):
+                    customer_info = {
+                        'email': customer_email or 'Not provided',
+                        'phone': customer_phone or 'Not provided',
+                        'message': urgent_message,
+                        'conversation_id': conversation_id
+                    }
+                    
+                    result = send_telegram_alert(
+                        telegram_config['bot_token'],
+                        telegram_config['group_chat_id'],
+                        customer_info,
+                        store_config.get('name', 'Prism The Store'),
+                        store_config.get('contact', {}).get('primary_phone', '+8801729103420')
+                    )
+                    
+                    if result and result.get('ok'):
+                        return jsonify({
+                            'response': f"✅ Thank you! I've notified our team about your urgent request. Someone will contact you at {message} within 15 minutes. You can also call us directly at {store_config.get('contact', {}).get('primary_phone', '+8801729103420')} for immediate assistance.",
+                            'conversation_id': conversation_id,
+                            'handoff_initiated': True
+                        })
+            else:
+                # Invalid contact format, ask again
                 return jsonify({
-                    'response': "I understand you need assistance urgently. Please provide your email or phone number so our team can contact you right away:",
+                    'response': "Please provide a valid email address or phone number (e.g., 01713162795 or +8801713162795) so our team can contact you urgently.",
                     'conversation_id': conversation_id,
                     'ask_contact': True
                 })
+        
+        # URGENCY DETECTION
+        urgent_keywords = [
+            'urgent', 'emergency', 'asap', 'immediately', 'quick',
+            'speak to human', 'talk to person', 'real person',
+            'help me now', 'right now', 'joldi', 'fast', 'quickly',
+            'problem', 'issue', 'serious', 'critical', 'important',
+            'talk to someone', 'human', 'person', 'agent', 'support team'
+        ]
+        
+        is_urgent = any(keyword in message.lower() for keyword in urgent_keywords)
+        
+        # If urgent and Telegram enabled, set waiting state
+        if is_urgent and store_config.get('telegram', {}).get('enabled') and conversation_id != 'new':
+            # Set state to wait for contact info
+            set_conversation_state(conversation_id, 'waiting_for_contact', True)
+            set_conversation_state(conversation_id, 'urgent_message', message)
             
+            return jsonify({
+                'response': "I understand you need assistance urgently. Please provide your email or phone number so our team can contact you right away:",
+                'conversation_id': conversation_id,
+                'ask_contact': True
+            })
+                    
             # Send to Telegram
             telegram_config = store_config['telegram']
             customer_info = {
