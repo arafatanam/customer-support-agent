@@ -1,0 +1,44 @@
+{
+  "prism_the_store_001": {
+    "store_id": "prism_the_store_001",
+    "name": "Prism The Store",
+    "website": "www.prismthestore.com",
+    "telegram": {
+      "enabled": true,
+      "bot_token": "8651304807:AAHfdlnbPZr0sOKHc6RuA0MHVOGoDC-hWM4",
+      "group_chat_id": -3552610562,
+      "team_handoff": true,
+      "response_time": "15 minutes"
+    },
+    "contact": {
+      "primary_phone": "+8801729103420",
+      "secondary_phone": "+8801890312221",
+      "email": "info@prismthestore.com",
+      "support_hours": "10 AM to 10 PM (Bangladesh Time)"
+    },
+    "brand": {
+      "voice": "Luxury & Premium",
+      "primary_color": "#304237",
+      "secondary_color": "#C4A467",
+      "greeting": "Hi! Welcome to Prism The Store. How can I help you today?"
+    },
+    "products": {
+      "categories": ["Coral Haze Juttis", "Ritu Kumar", "Anita Dongre", "Basanti", "Mul Mul"],
+      "top_products": ["Judyth", "Spring Fling", "Hannah", "Mocha", "Camellia", "Nazakat", "Esba", "Beyonce", "Sweet Pea", "Gelato"]
+    },
+    "faqs": [
+      {
+        "question": "May I know when will I receive my parcel?",
+        "answer": "For updates on your order delivery, please contact our Dhaka store at +8801729103420."
+      },
+      {
+        "question": "What are your store hours?",
+        "answer": "Our support team is available from 10 AM to 10 PM (Bangladesh Time)."
+      }
+    ],
+    "escalation": {
+      "human_handoff": true,
+      "escalation_phrase": "I'll connect you with our human support team. Please expect a response within 15 minutes or call us at +8801729103420 for immediate assistance."
+    }
+  }
+}
