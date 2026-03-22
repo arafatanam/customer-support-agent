@@ -82,6 +82,7 @@ Click below to handle this customer:
     
     try:
         response = requests.post(url, json=data, timeout=10)
+        print(f"Telegram response: {response.json()}")
         return response.json()
     except Exception as e:
         print(f"Telegram error: {e}")
@@ -147,33 +148,46 @@ def chat():
         
         store_config = STORE_CONFIGS.get(store_id, STORE_CONFIGS.get('default', {}))
         
+        print(f"\n=== CHAT REQUEST ===")
+        print(f"Message: {message}")
+        print(f"Store ID: {store_id}")
+        print(f"Email: {customer_email}")
+        print(f"Phone: {customer_phone}")
+        print(f"Telegram enabled: {store_config.get('telegram', {}).get('enabled', False)}")
+        
         # Check if already being handled by human
         if conversation_id in ACTIVE_HANDOFFS and conversation_id != 'new':
             handoff_info = ACTIVE_HANDOFFS[conversation_id]
+            print(f"Already handled by: {handoff_info['team_member_name']}")
             return jsonify({
                 'response': f"✅ Our team member {handoff_info['team_member_name']} is now helping you. They will respond shortly. You can also call {store_config.get('contact', {}).get('primary_phone', '+8801729103420')} if urgent.",
                 'conversation_id': conversation_id,
                 'handoff_active': True
             })
         
-        # URGENCY DETECTION
+        # URGENCY DETECTION - expanded list
         urgent_keywords = [
             'urgent', 'emergency', 'asap', 'immediately', 'quick',
-            'speak to human', 'talk to person', 'real person',
+            'speak to human', 'talk to person', 'real person', 'talk to someone',
             'help me now', 'right now', 'joldi', 'fast', 'quickly',
             'problem', 'issue', 'serious', 'critical', 'important',
-            'talk to someone', 'human', 'person', 'agent', 'support team'
+            'human', 'person', 'agent', 'support team', 'someone',
+            'can i talk', 'can i speak', 'need help now', 'urgent help'
         ]
         
         is_urgent = any(keyword in message.lower() for keyword in urgent_keywords)
+        print(f"Is urgent: {is_urgent}")
         
         # ORDER TRACKING
         is_order_query = any(word in message.lower() for word in ['order', 'track', 'where', 'parcel', 'delivery', 'shipping', 'received'])
         
-        # Handle urgent request with Telegram
+        # ========== PRIORITY: HANDLE URGENT WITH TELEGRAM ==========
         if is_urgent and store_config.get('telegram', {}).get('enabled'):
+            print("URGENT DETECTED! Processing Telegram handoff...")
             
+            # If no contact info, ask for it
             if not customer_email and not customer_phone:
+                print("No contact info - asking for it")
                 return jsonify({
                     'response': "I understand you need assistance urgently. Please provide your email or phone number so our team can contact you right away:",
                     'conversation_id': conversation_id,
@@ -189,6 +203,7 @@ def chat():
                 'conversation_id': conversation_id
             }
             
+            print(f"Sending to Telegram group: {telegram_config['group_chat_id']}")
             result = send_telegram_alert(
                 telegram_config['bot_token'],
                 telegram_config['group_chat_id'],
@@ -197,22 +212,36 @@ def chat():
                 store_config.get('contact', {}).get('primary_phone', '+8801729103420')
             )
             
+            print(f"Telegram result: {result}")
+            
             if result and result.get('ok'):
+                print("Telegram alert sent successfully!")
                 return jsonify({
-                    'response': f"I've notified our team about your urgent request. Someone will contact you at {customer_email or customer_phone} within 15 minutes. You can also call us directly at {store_config.get('contact', {}).get('primary_phone', '+8801729103420')} for immediate assistance.",
+                    'response': f"✅ I've notified our team about your urgent request. Someone will contact you at {customer_email or customer_phone} within 15 minutes. You can also call us directly at {store_config.get('contact', {}).get('primary_phone', '+8801729103420')} for immediate assistance.",
                     'conversation_id': conversation_id,
                     'handoff_initiated': True
                 })
+            else:
+                print(f"Telegram failed: {result}")
+                return jsonify({
+                    'response': f"I'm trying to reach our team. Please call us directly at {store_config.get('contact', {}).get('primary_phone', '+8801729103420')} for immediate help.",
+                    'conversation_id': conversation_id,
+                    'handoff_fallback': True
+                })
         
-        # Handle order tracking (non-urgent)
+        # ========== HANDLE ORDER TRACKING ==========
         if is_order_query and not is_urgent:
             phone = store_config.get('contact', {}).get('primary_phone', '+8801729103420')
+            print("Order tracking detected - sending tracking message")
             return jsonify({
                 'response': f"I'd be happy to help you with your order. For order tracking, please contact our Dhaka store at {phone}. They'll be able to provide you with the most up-to-date information on your order status. If you have any other questions or concerns, feel free to ask, and I'll do my best to assist you.",
                 'conversation_id': conversation_id
             })
         
-        # Normal conversation flow
+        # ========== NORMAL AI CONVERSATION ==========
+        print("Normal conversation flow - using AI")
+        
+        # Create store-specific system prompt
         system_prompt = f"""You are a friendly, helpful customer support agent for {store_config.get('name', 'Prism The Store')}.
 
 Brand Voice: {store_config.get('brand', {}).get('voice', 'Warm, professional, and helpful')}
