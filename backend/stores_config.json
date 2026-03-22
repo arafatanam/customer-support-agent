@@ -3,11 +3,12 @@
     "store_id": "prism_the_store_001",
     "name": "Prism The Store",
     "website": "www.prismthestore.com",
-    "whatsapp": {
+    "telegram": {
       "enabled": true,
-      "group_name": "Prism Support Team",
-      "team_members": ["+8801729103420", "+8801890312221", "+8801713162795"],
-      "business_hours": "10 AM to 10 PM",
+      "bot_token": "8651304807:AAHfdlnbPZr0sOKHc6RuA0MHVOGoDC-hWM4",
+      "group_chat_id": -3755488743,
+      "group_link": "https://t.me/+chm-iBN2fYUwZTY1",
+      "team_handoff": true,
       "response_time": "15 minutes"
     },
     "about": {
@@ -71,6 +72,7 @@
       "primary_phone": "+8801729103420",
       "secondary_phone": "+8801890312221",
       "email": "info@prismthestore.com",
+      "support_hours": "10 AM to 10 PM (Bangladesh Time)",
       "social_media": {
         "facebook": "https://www.facebook.com/prismthestore/",
         "instagram": "https://www.instagram.com/prismthestore"
@@ -153,7 +155,7 @@
     ],
     "escalation": {
       "human_handoff": true,
-      "escalation_phrase": "I'll connect you with our human support team. Please expect a response within 24 hours or call us at +8801729103420 for immediate assistance."
+      "escalation_phrase": "I'll connect you with our human support team. Please expect a response within 15 minutes or call us at +8801729103420 for immediate assistance."
     },
     "install": {
       "position": "bottom-left",
