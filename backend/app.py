@@ -156,7 +156,7 @@ def chat():
                 'handoff_active': True
             })
         
-        # URGENCY DETECTION - expanded keywords
+        # URGENCY DETECTION
         urgent_keywords = [
             'urgent', 'emergency', 'asap', 'immediately', 'quick',
             'speak to human', 'talk to person', 'real person',
@@ -167,18 +167,12 @@ def chat():
         
         is_urgent = any(keyword in message.lower() for keyword in urgent_keywords)
         
-        # ORDER TRACKING - handle specially
+        # ORDER TRACKING
         is_order_query = any(word in message.lower() for word in ['order', 'track', 'where', 'parcel', 'delivery', 'shipping', 'received'])
-        
-        # LOG for debugging
-        print(f"Message: '{message}'")
-        print(f"Is urgent: {is_urgent}")
-        print(f"Has Telegram: {store_config.get('telegram', {}).get('enabled', False)}")
         
         # Handle urgent request with Telegram
         if is_urgent and store_config.get('telegram', {}).get('enabled'):
             
-            # If no contact info, ask for it
             if not customer_email and not customer_phone:
                 return jsonify({
                     'response': "I understand you need assistance urgently. Please provide your email or phone number so our team can contact you right away:",
@@ -210,9 +204,8 @@ def chat():
                     'handoff_initiated': True
                 })
         
-        # Handle order tracking (non-urgent but helpful)
+        # Handle order tracking (non-urgent)
         if is_order_query and not is_urgent:
-            # Return helpful order tracking message
             phone = store_config.get('contact', {}).get('primary_phone', '+8801729103420')
             return jsonify({
                 'response': f"I'd be happy to help you with your order. For order tracking, please contact our Dhaka store at {phone}. They'll be able to provide you with the most up-to-date information on your order status. If you have any other questions or concerns, feel free to ask, and I'll do my best to assist you.",
@@ -220,7 +213,6 @@ def chat():
             })
         
         # Normal conversation flow
-        # Create store-specific system prompt
         system_prompt = f"""You are a friendly, helpful customer support agent for {store_config.get('name', 'Prism The Store')}.
 
 Brand Voice: {store_config.get('brand', {}).get('voice', 'Warm, professional, and helpful')}
@@ -245,7 +237,7 @@ Important Rules:
 4. Keep responses concise but friendly
 5. If you don't know something, offer the phone number for assistance
 
-Start conversations warmly. Example opening: "Welcome to Prism. How may I assist you today?""
+Start conversations warmly. Example opening: "Welcome to Prism. How may I assist you today?" """
 
         # Get conversation history
         if conversation_id != 'new':
@@ -337,4 +329,3 @@ def set_webhook():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
-    
