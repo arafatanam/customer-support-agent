@@ -6,9 +6,9 @@
     "telegram": {
       "enabled": true,
       "bot_token": "8651304807:AAHfdlnbPZr0sOKHc6RuA0MHVOGoDC-hWM4",
-      "group_chat_id": -3552610562,
+      "group_chat_id": -1003552610562,
       "team_handoff": true,
-      "response_time": "15 minutes"
+      "response_time": "5 minutes"
     },
     "contact": {
       "primary_phone": "+8801729103420",
