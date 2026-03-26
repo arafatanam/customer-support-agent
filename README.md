@@ -1,6 +1,6 @@
-# AI Customer Support Agent - Multi-Store Platform
+# Avion AI - Multi-Store Customer Support Platform
 
-A scalable, multi-tenant AI customer support agent built for e-commerce stores. One codebase serves unlimited clients with store-specific customization.
+A scalable, multi-tenant AI customer support agent platform. One codebase serves unlimited clients with store-specific customization, human handoff capabilities, and conversation history tracking.
 
 ## Table of Contents
 - [Architecture Overview](#architecture-overview)
@@ -8,10 +8,11 @@ A scalable, multi-tenant AI customer support agent built for e-commerce stores. 
 - [Project Structure](#project-structure)
 - [File Descriptions](#file-descriptions)
 - [Setup & Installation](#setup--installation)
+- [Database Setup](#database-setup)
 - [Adding a New Client](#adding-a-new-client)
 - [Deployment](#deployment)
 - [API Reference](#api-reference)
-- [Customization](#customization)
+- [Escalation Modes](#escalation-modes)
 - [Troubleshooting](#troubleshooting)
 
 ## Architecture Overview
@@ -19,7 +20,8 @@ A scalable, multi-tenant AI customer support agent built for e-commerce stores. 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │   Client Site   │────▶│   Backend API   │────▶│     Groq AI    │
-│   (Frontend)    │     │   (Render)      │     │   (Llama 3.3)   │
+│   (WordPress/   │     │   (Render)      │     │   (Llama 3.3)   │
+│    Custom HTML) │     │                 │     │                 │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
          │                       │                        │
          │                       │                        │
@@ -28,6 +30,12 @@ A scalable, multi-tenant AI customer support agent built for e-commerce stores. 
 │   Chat Widget   │     │   Supabase      │     │   Store Config  │
 │   (Vercel)      │     │   (Database)    │     │   (JSON)        │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
+                                  │
+                                  ▼
+                        ┌─────────────────┐
+                        │   Telegram/     │
+                        │   Email Alerts  │
+                        └─────────────────┘
 ```
 
 ## Tech Stack
@@ -36,10 +44,10 @@ A scalable, multi-tenant AI customer support agent built for e-commerce stores. 
 |-----------|------------|---------|
 | **Backend** | Python/Flask | API server handling chat requests |
 | **AI Engine** | Groq (Llama 3.3 70B) | Free, fast AI responses |
-| **Database** | Supabase | Conversation storage |
-| **Frontend** | Vanilla JavaScript | Embeddable chat widget |
+| **Database** | Supabase (PostgreSQL) | Conversation storage & state management |
+| **Frontend** | Vanilla JavaScript | Embeddable chat widget (2 versions: Avion AI Demo & Universal) |
 | **Hosting** | Render (backend) + Vercel (frontend) | Free tier hosting |
-| **Configuration** | JSON | Store-specific settings |
+| **Escalation** | Telegram API / SendGrid | Human handoff notifications |
 
 ## Project Structure
 
@@ -48,39 +56,51 @@ customer-support-agent/
 │
 ├── backend/
 │   ├── app.py                  # Main Flask application
-│   └── stores_config.json      # All client configurations
 │
 ├── frontend/
 │   ├── widget.js               # Universal chat widget
-│   └── index.html              # Demo page for testing
+│   └── index.html              # Avion AI demo landing page
 │
-├── .gitignore                  # Git ignore rules
-├── requirements.txt            # Python dependencies
-├── render.yaml                 # Render deployment config
-└── README.md                    
+├── stores_config.json           # All client configurations (root folder)
+├── .gitignore                   # Git ignore rules
+├── requirements.txt             # Python dependencies
+├── render.yaml                  # Render deployment config
+└── README.md                    # This file
 ```
 
 ## File Descriptions
 
 ### 1. **`backend/app.py`** - Main Application Server
-**Purpose**: Handles all API requests, manages conversations, interfaces with Groq AI.
 
-**Key Functionalities**:
-- `/chat` (POST) - Process user messages and return AI responses
-- `/health` (GET) - Health check endpoint
-- `/order-status` (POST) - Mock order status endpoint
-- `/test-groq` (GET) - Test Groq API connectivity
+**Purpose**: Handles all API requests, manages conversations, interfaces with Groq AI, and manages human handoff.
+
+**Key Endpoints**:
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/` | GET | API status and available endpoints |
+| `/chat` | POST | Process user messages, return AI responses, handle handoffs |
+| `/poll` | GET | Widget polling for agent messages during handoff |
+| `/health` | GET | Health check endpoint |
+| `/test-groq` | GET | Test Groq API connectivity |
+| `/telegram-webhook` | POST | Receive Telegram button clicks and agent replies |
+| `/order-status` | POST | Mock order status endpoint |
 
 **How it works**:
-1. Receives message with `store_id`
-2. Loads store-specific configuration from `stores_config.json`
-3. Creates custom system prompt with store policies and FAQs
-4. Fetches conversation history from Supabase
-5. Sends to Groq AI for response
-6. Stores conversation and returns response
+1. Receives message with `store_id` and optional contact info
+2. Checks for:
+   - Active human handoff → forwards to Telegram
+   - Waiting for contact info → captures email/phone
+   - Urgent keywords → triggers escalation
+   - Order tracking keywords → returns phone number
+3. Loads store-specific configuration from `stores_config.json`
+4. Creates custom system prompt with store policies and FAQs
+5. Fetches conversation history from Supabase
+6. Sends to Groq AI for response
+7. Stores conversation and returns response
 
-### 2. **`backend/stores_config.json`** - Client Configuration
-**Purpose**: Central configuration file for all clients.
+### 2. **`stores_config.json`** - Client Configuration (Root Folder)
+
+**Purpose**: Central configuration file for all clients. Each store has its own configuration with escalation preferences.
 
 **Structure**:
 ```json
@@ -89,49 +109,48 @@ customer-support-agent/
     "store_id": "unique_identifier",
     "name": "Store Name",
     "website": "storeurl.com",
+    "telegram": {
+      "enabled": true/false,
+      "bot_token": "telegram_bot_token",
+      "group_chat_id": -123456789
+    },
+    "escalation": {
+      "mode": "telegram" or "email",
+      "human_handoff": true,
+      "alert_email": "team@store.com"
+    },
     "brand": {
       "voice": "brand personality",
       "primary_color": "#HEX",
       "secondary_color": "#HEX",
       "greeting": "Welcome message"
     },
-    "platform": "WordPress/Shopify/etc",
+    "contact": {
+      "email": "support@store.com",
+      "primary_phone": "+1234567890",
+      "support_hours": "9 AM to 5 PM"
+    },
     "products": {
       "categories": ["cat1", "cat2"],
       "top_products": ["product1", "product2"]
     },
-    "policies": {
-      "privacy": "Privacy policy text",
-      "terms": "Terms text",
-      "shipping": "Shipping policy",
-      "international": true/false
-    },
-    "contact": {
-      "email": "support@store.com",
-      "phone": "+1234567890",
-      "support_hours": "9 AM to 5 PM"
-    },
     "faqs": [
-      {"question": "Q1?", "answer": "A1"},
-      {"question": "Q2?", "answer": "A2"}
-    ],
-    "escalation": {
-      "human_handoff": true,
-      "escalation_phrase": "Connecting to human..."
-    }
+      {"question": "Q1?", "answer": "A1"}
+    ]
   }
 }
 ```
 
 ### 3. **`frontend/widget.js`** - Universal Chat Widget
-**Purpose**: Embeddable JavaScript widget that works on any website.
+
+**Purpose**: Embeddable JavaScript widget that works on any website with full handoff support.
 
 **Features**:
-- Store-specific branding (colors, name)
-- Position configurable (bottom-left/bottom-right)
-- Persistent conversation history
-- Typing indicators
-- Smooth animations
+- Store-specific branding (colors, name, position)
+- Urgent keyword detection
+- Contact info collection (email/phone)
+- Human handoff with polling for agent replies
+- Typing indicators and smooth animations
 - Mobile responsive
 - Error handling
 
@@ -141,14 +160,16 @@ new SupportWidget('store_id_001', {
     storeName: 'Store Name',
     primaryColor: '#HEX',
     secondaryColor: '#HEX',
-    position: 'bottom-left'
+    position: 'bottom-right'  // or 'bottom-left'
 });
 ```
 
-### 4. **`frontend/index.html`** - Demo Page
-**Purpose**: Test page to verify widget functionality before client installation.
+### 4. **`frontend/index.html`** - Avion AI Demo Landing Page
+
+**Purpose**: Marketing landing page for Avion AI with embedded demo widget using the `avion_demo` store configuration (email escalation).
 
 ### 5. **`requirements.txt`** - Python Dependencies
+
 ```
 flask==2.3.3
 flask-cors==4.0.0
@@ -160,6 +181,7 @@ requests==2.31.0
 ```
 
 ### 6. **`render.yaml`** - Render Deployment Config
+
 ```yaml
 services:
   - type: web
@@ -177,6 +199,7 @@ services:
 - Vercel account (free)
 - Supabase account (free)
 - Groq account (free)
+- (Optional) Telegram Bot for handoff
 
 ### Initial Setup
 
@@ -186,7 +209,7 @@ git clone https://github.com/yourusername/customer-support-agent.git
 cd customer-support-agent
 ```
 
-2. **Install Dependencies**
+2. **Install Dependencies Locally** (optional)
 ```bash
 pip install -r requirements.txt
 ```
@@ -197,17 +220,38 @@ GROQ_API_KEY=your_groq_key
 SUPABASE_URL=your_supabase_url
 SUPABASE_KEY=your_supabase_key
 PYTHON_VERSION=3.11.11
+SENDGRID_API_KEY=your_sendgrid_key  # Optional, for email escalation
 ```
 
 4. **Deploy Backend** (Render)
 - Connect GitHub repository
 - Use `render.yaml` configuration
-- Auto-deploys on push
+- Auto-deploys on push to main branch
 
 5. **Deploy Frontend** (Vercel)
 - Import GitHub repository
 - Root directory: `frontend`
-- Auto-deploys on push
+- Auto-deploys on push to main branch
+
+## Database Setup
+
+Run this SQL in Supabase SQL Editor:
+
+```sql
+-- Create conversations table with metadata support
+CREATE TABLE IF NOT EXISTS conversations (
+    id SERIAL PRIMARY KEY,
+    messages JSONB NOT NULL,
+    metadata JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW())
+);
+
+-- Create indexes for performance
+CREATE INDEX IF NOT EXISTS idx_conversations_created_at ON conversations(created_at);
+CREATE INDEX IF NOT EXISTS idx_conversations_metadata ON conversations USING gin (metadata);
+CREATE INDEX IF NOT EXISTS idx_conversations_messages ON conversations USING gin (messages);
+```
 
 ## Adding a New Client
 
@@ -216,18 +260,47 @@ PYTHON_VERSION=3.11.11
 - Brand colors (primary/secondary)
 - Brand voice description
 - Product categories and top products
-- Policies (privacy, terms, shipping)
-- Contact information
+- Policies (shipping, returns, etc.)
+- Contact information (email, phone)
 - Top 10 FAQs with answers
 - Preferred chat position
+- **Escalation preference** (Telegram or Email)
 
 ### Step 2: Add to `stores_config.json`
 Add a new entry with unique store ID:
+
 ```json
 "new_store_002": {
     "store_id": "new_store_002",
     "name": "New Store",
-    // ... all gathered information
+    "website": "newstore.com",
+    "telegram": {
+      "enabled": true,
+      "bot_token": "your_bot_token",
+      "group_chat_id": -123456789
+    },
+    "escalation": {
+      "mode": "telegram",
+      "human_handoff": true
+    },
+    "contact": {
+      "primary_phone": "+1234567890",
+      "email": "support@newstore.com",
+      "support_hours": "9 AM to 5 PM"
+    },
+    "brand": {
+      "voice": "Friendly and professional",
+      "primary_color": "#HEX",
+      "secondary_color": "#HEX",
+      "greeting": "Welcome to New Store!"
+    },
+    "products": {
+      "categories": ["Category1", "Category2"],
+      "top_products": ["Product1", "Product2"]
+    },
+    "faqs": [
+      {"question": "Question 1?", "answer": "Answer 1"}
+    ]
 }
 ```
 
@@ -242,7 +315,7 @@ Add a new entry with unique store ID:
             storeName: 'New Store',
             primaryColor: '#their-color',
             secondaryColor: '#their-other-color',
-            position: 'bottom-left'
+            position: 'bottom-right'
         });
     };
     document.head.appendChild(script);
@@ -258,11 +331,7 @@ git push
 ```
 
 ### Step 5: Send Install Instructions
-Provide client with install code for their platform:
-- WordPress (footer.php)
-- Elementor (HTML widget)
-- Shopify (theme.liquid)
-- Any website (just before `</body>`)
+Provide client with install code for their platform.
 
 ## Deployment
 
@@ -287,17 +356,26 @@ Content-Type: application/json
 {
     "message": "User question",
     "conversation_id": "new or existing",
-    "store_id": "store_identifier"
+    "store_id": "store_identifier",
+    "email": "optional@email.com",
+    "phone": "+1234567890",
+    "urgent": true/false
 }
 ```
 
-**Response**
-```json
-{
-    "response": "AI answer",
-    "conversation_id": "123"
-}
+**Response Types**:
+| Response Field | Meaning |
+|----------------|---------|
+| `response` | AI or system response text |
+| `ask_contact` | True if system needs email/phone |
+| `handoff_initiated` | True if team was notified |
+| `handoff_active` | True if human agent is responding |
+
+### Poll Endpoint (Widget)
+```http
+GET /poll?conversation_id=123
 ```
+Returns pending agent messages during human handoff.
 
 ### Health Check
 ```http
@@ -311,28 +389,18 @@ GET /test-groq
 ```
 **Response** `{"status": "success", "message": "Groq is working!"}`
 
-## Customization
+## Escalation Modes
 
-### Widget Appearance
-Modify `frontend/widget.js` to change:
-- Button styles
-- Animation effects
-- Message bubbles
-- Font families
-- Positioning
+### Telegram Mode
+- Real-time two-way chat between customer and agent
+- Agent receives alert with inline buttons
+- Agent can reply directly from Telegram
+- Best for businesses needing instant response
 
-### AI Behavior
-Modify system prompt in `app.py` to change:
-- Response length
-- Temperature (creativity)
-- Brand voice enforcement
-- Escalation triggers
-
-### Database
-Supabase stores:
-- Conversation history
-- Message threads
-- Timestamps
+### Email Mode
+- Customer's urgent request is emailed to the store
+- No two-way chat; store contacts customer directly
+- Best for simple lead capture or slower response needs
 
 ## Troubleshooting
 
@@ -340,33 +408,35 @@ Supabase stores:
 
 | Issue | Solution |
 |-------|----------|
-| 500 Error | Check Groq API key in Render |
-| Model not found | Update model name in `app.py` |
-| No response | Check Supabase connection |
-| Widget not showing | Verify store ID matches config |
-| CSP errors | Normal on some sites, test on actual site |
+| 500 Error | Check Groq API key in Render environment variables |
+| Telegram not sending | Verify bot token and group chat ID; ensure bot is group admin |
+| Widget not showing | Check store_id matches exactly in config and widget init |
+| Contact not captured | Verify phone/email format in widget.js validation |
+| Handoff not working | Check Render logs for "URGENT DETECTED" and Telegram response |
 
 ### Debug Steps
-1. Test endpoint: `https://your-api.onrender.com/test-groq`
+1. Test Groq: `https://your-api.onrender.com/test-groq`
 2. Check Render logs in dashboard
 3. Test with curl:
 ```bash
 curl -X POST https://your-api.onrender.com/chat \
   -H "Content-Type: application/json" \
-  -d '{"message":"Hello","store_id":"test_store"}'
+  -d '{"message":"urgent help","store_id":"your_store_id"}'
 ```
 
-## Scaling
+## Viewing Conversation History
 
-- **One repository** serves unlimited clients
-- **Add clients** by updating `stores_config.json`
-- **No code changes** needed for new clients
-- **Automatic updates** for all clients on push
+All conversations are stored in Supabase. Query with:
 
-## Contributing
-
-1. Fork repository
-2. Create feature branch
-3. Commit changes
-4. Push to branch
-5. Open pull request
+```sql
+-- View recent conversations with summaries
+SELECT 
+    id,
+    created_at,
+    jsonb_array_length(messages) as message_count,
+    SUBSTRING((messages->1->>'content'), 1, 60) as customer_message,
+    metadata->>'handoff_active' as handoff_active,
+    metadata->>'agent_name' as handled_by
+FROM conversations
+ORDER BY created_at DESC;
+```
