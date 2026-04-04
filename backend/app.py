@@ -15,7 +15,6 @@ CORS(app)
 supabase_url = os.environ.get('SUPABASE_URL')
 supabase_key = os.environ.get('SUPABASE_KEY')
 groq_api_key = os.environ.get('GROQ_API_KEY')
-sendgrid_api_key = os.environ.get('SENDGRID_API_KEY')
 
 groq_client = Groq(api_key=groq_api_key)
 supabase = create_client(supabase_url, supabase_key)
@@ -213,6 +212,76 @@ def test_groq():
     except Exception as e:
         return jsonify({'status': 'error', 'error': str(e)}), 500
 
+@app.route('/api/contact', methods=['POST'])
+def contact_form():
+    try:
+        data = request.json
+        name = data.get('name')
+        email = data.get('email')
+        company = data.get('company', '')
+        message = data.get('message')
+
+        if not name or not email or not message:
+            return jsonify({'error': 'Name, email, and message are required.'}), 400
+
+        resend_key = os.environ.get('RESEND_KEY')
+        
+        if not resend_key:
+            print("⚠️ RESEND_KEY not set")
+            return jsonify({'error': 'Email service not configured'}), 500
+
+        headers = {
+            'Authorization': f'Bearer {resend_key}',
+            'Content-Type': 'application/json'
+        }
+        
+        payload = {
+            'from': 'onboarding@resend.dev',  # Change to your verified domain later
+            'to': ['anamarafat@gmail.com'],
+            'subject': f'New Avion AI Inquiry from {name}',
+            'reply_to': email,
+            'html': f"""
+                <h2>New Inquiry from Avion AI Website</h2>
+                <p><strong>Name:</strong> {name}</p>
+                <p><strong>Email:</strong> {email}</p>
+                <p><strong>Company/Website:</strong> {company or 'Not provided'}</p>
+                <p><strong>Message:</strong></p>
+                <p>{message.replace(chr(10), '<br>')}</p>
+                <hr>
+                <p style="color: #666; font-size: 12px;">Sent from avionai.com contact form</p>
+            """,
+            'text': f"""
+New Inquiry from Avion AI Website
+
+Name: {name}
+Email: {email}
+Company/Website: {company or 'Not provided'}
+
+Message:
+{message}
+
+---
+Sent from avionai.com contact form
+"""
+        }
+        
+        response = requests.post(
+            'https://api.resend.com/emails',
+            headers=headers,
+            json=payload,
+            timeout=10
+        )
+        
+        if response.status_code in (200, 201):
+            print(f"✅ Contact form email sent from {email}")
+            return jsonify({'success': True}), 200
+        else:
+            print(f"❌ Resend error: {response.status_code} - {response.text}")
+            return jsonify({'error': 'Failed to send email'}), 500
+            
+    except Exception as e:
+        print(f"Contact form error: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/poll', methods=['GET'])
 def poll():
