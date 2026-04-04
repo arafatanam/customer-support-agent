@@ -15,6 +15,7 @@ CORS(app)
 supabase_url = os.environ.get('SUPABASE_URL')
 supabase_key = os.environ.get('SUPABASE_KEY')
 groq_api_key = os.environ.get('GROQ_API_KEY')
+sendgrid_api_key = os.environ.get('SENDGRID_API_KEY')
 
 groq_client = Groq(api_key=groq_api_key)
 supabase = create_client(supabase_url, supabase_key)
@@ -471,105 +472,87 @@ def chat():
 
         print(f"\n=== CHAT [{store_id}] ===")
         print(f"Message: {message} | conv: {conversation_id}")
-        print(f"Escalation: {'telegram' if uses_telegram else 'email' if uses_email else 'none'}")
+        print(f"Telegram enabled: {uses_telegram}")
 
-        # STEP 1: Waiting for contact info
+        # STEP 1: Check if waiting for contact info
         if conversation_id != 'new':
             waiting = get_conversation_state(conversation_id, 'waiting_for_contact')
             if waiting:
+                print("Waiting for contact info - processing...")
                 phone_in_msg = is_valid_phone(message)
                 email_in_msg = is_valid_email(message)
-                resolved_phone = message if phone_in_msg else customer_phone
-                resolved_email = message if email_in_msg else customer_email
-
-                if phone_in_msg or email_in_msg or customer_phone or customer_email:
+                
+                if phone_in_msg or email_in_msg:
                     set_conversation_state(conversation_id, 'waiting_for_contact', False)
-                    urgent_msg = get_conversation_state(
-                        conversation_id, 'urgent_message'
-                    ) or "URGENT: Please contact me"
-
+                    urgent_msg = get_conversation_state(conversation_id, 'urgent_message') or "URGENT: Please contact me"
+                    
                     customer_info = {
-                        'email': resolved_email or 'Not provided',
-                        'phone': resolved_phone or 'Not provided',
+                        'email': message if email_in_msg else customer_email or 'Not provided',
+                        'phone': message if phone_in_msg else customer_phone or 'Not provided',
                         'message': urgent_msg,
                         'conversation_id': conversation_id
                     }
-                    contact_shown = resolved_phone or resolved_email
-
-                    alert_ok = False
-
+                    
                     if uses_telegram:
                         result = send_telegram_alert(store_config, customer_info)
-                        alert_ok = bool(result and result.get('ok'))
-
-                    elif uses_email:
-                        result = send_email_alert(store_config, customer_info)
-                        alert_ok = bool(result and result.get('ok'))
-
-                    if alert_ok or uses_email:
-                        if uses_email:
+                        if result and result.get('ok'):
                             return jsonify({
-                                'response': (
-                                    f"✅ Thank you! Our team has received your request and will "
-                                    f"reach out to you at {contact_shown} within 24 hours. "
-                                    f"You can also email us directly at "
-                                    f"{contact.get('email', '')}."
-                                ),
+                                'response': f"✅ Thank you! Our team has been notified. Someone will contact you at {message} within 15 minutes.",
                                 'conversation_id': conversation_id,
                                 'handoff_initiated': True
                             })
-                        return jsonify({
-                            'response': (
-                                f"✅ Thank you! Our team has been notified and will be "
-                                f"with you shortly. You can keep chatting here — a team "
-                                f"member will join this conversation."
-                            ),
-                            'conversation_id': conversation_id,
-                            'handoff_initiated': True
-                        })
-                    else:
-                        return jsonify({
-                            'response': (
-                                f"Thank you! Please call us directly at {store_phone} "
-                                f"for the fastest assistance."
-                            ),
-                            'conversation_id': conversation_id,
-                            'handoff_initiated': True
-                        })
+                    elif uses_email:
+                        result = send_email_alert(store_config, customer_info)
+                        if result and result.get('ok'):
+                            return jsonify({
+                                'response': f"✅ Thank you! Our team will reach out to you at {message} within 24 hours.",
+                                'conversation_id': conversation_id,
+                                'handoff_initiated': True
+                            })
                 else:
                     return jsonify({
-                        'response': (
-                            "Please provide a valid phone number (e.g. 01713162795) "
-                            "or email address so our team can reach you."
-                        ),
+                        'response': "Please provide a valid phone number (e.g., 01713162795) or email address.",
                         'conversation_id': conversation_id,
                         'ask_contact': True
                     })
 
-        # STEP 2: Handoff already active
+        # STEP 2: Check if handoff already active
         if conversation_id != 'new':
             handoff_active = get_conversation_state(conversation_id, 'handoff_active')
             if handoff_active and uses_telegram:
                 bot_token = tg_config.get('bot_token')
                 group_chat_id = tg_config.get('group_chat_id')
-                requests.post(
-                    f"https://api.telegram.org/bot{bot_token}/sendMessage",
-                    json={
-                        "chat_id": group_chat_id,
-                        "text": f"💬 *Customer says:*\n{message}",
-                        "parse_mode": "Markdown"
-                    }
-                )
+                if bot_token and group_chat_id:
+                    requests.post(
+                        f"https://api.telegram.org/bot{bot_token}/sendMessage",
+                        json={
+                            "chat_id": group_chat_id,
+                            "text": f"💬 *Customer says:*\n{message}",
+                            "parse_mode": "Markdown"
+                        }
+                    )
                 return jsonify({
                     'response': '',
                     'conversation_id': conversation_id,
                     'handoff_active': True
                 })
 
-        # STEP 3: Urgency detection
-        is_urgent = any(kw in message.lower() for kw in URGENT_KEYWORDS)
+        # STEP 3: URGENCY DETECTION (MUST come before order detection)
+        urgent_keywords = [
+            'urgent', 'emergency', 'asap', 'immediately', 'quick',
+            'speak to human', 'talk to person', 'real person', 'help me now',
+            'right now', 'fast', 'quickly', 'problem', 'issue', 'serious',
+            'critical', 'important', 'talk to someone', 'human', 'person',
+            'agent', 'support team', 'contact someone', 'need help'
+        ]
+        
+        is_urgent = any(kw in message.lower() for kw in urgent_keywords)
+        print(f"Is urgent: {is_urgent}")
 
+        # Handle urgent request FIRST
         if is_urgent and (uses_telegram or uses_email):
+            print("URGENT DETECTED - initiating handoff flow")
+            
             if conversation_id == 'new':
                 result = supabase.table('conversations') \
                     .insert({'messages': [{"role": "system", "content": "Support session."}], 'metadata': {}}) \
@@ -579,28 +562,21 @@ def chat():
             set_conversation_state(conversation_id, 'waiting_for_contact', True)
             set_conversation_state(conversation_id, 'urgent_message', message)
 
-            prompt_suffix = (
-                "and our team will contact you shortly."
-                if uses_email
-                else "and a team member will join this chat right away."
-            )
+            prompt_suffix = "and our team will contact you shortly." if uses_email else "and a team member will join this chat right away."
+            
             return jsonify({
-                'response': (
-                    f"I understand this is urgent. Please share your phone number "
-                    f"or email {prompt_suffix}"
-                ),
+                'response': f"I understand this is urgent. Please share your phone number or email {prompt_suffix}",
                 'conversation_id': conversation_id,
                 'ask_contact': True
             })
 
-        # STEP 4: Order tracking shortcut
-        is_order = any(w in message.lower() for w in ORDER_KEYWORDS)
-        if is_order and not is_urgent and store_phone:
+        # STEP 4: Order tracking (only if NOT urgent)
+        order_keywords = ['order', 'track', 'where', 'parcel', 'delivery', 'shipping', 'received', 'address']
+        is_order = any(w in message.lower() for w in order_keywords)
+        
+        if is_order and store_phone:
             return jsonify({
-                'response': (
-                    f"For order tracking, please contact our store at {store_phone}. "
-                    f"They'll have the most up-to-date information on your order."
-                ),
+                'response': f"For order tracking or delivery inquiries, please contact our store at {store_phone}. They'll have the most up-to-date information.",
                 'conversation_id': conversation_id
             })
 
@@ -611,7 +587,6 @@ def chat():
         )
         products_text = ", ".join(store_config.get('products', {}).get('top_products', []))
 
-        # Build system prompt using list join (avoids f-string backslash issues)
         system_prompt_parts = [
             f"You are a friendly, helpful customer support agent for {store_name}.",
             "",
@@ -683,7 +658,6 @@ def chat():
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
-
 @app.route('/order-status', methods=['POST'])
 def order_status():
     try:
@@ -696,7 +670,6 @@ def order_status():
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
