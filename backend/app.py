@@ -237,7 +237,7 @@ def contact_form():
         
         payload = {
             'from': 'onboarding@resend.dev',  # Change to your verified domain later
-            'to': ['anamarafat@gmail.com'],
+            'to': ['arafatanam01@gmail.com'],
             'subject': f'New Avion AI Inquiry from {name}',
             'reply_to': email,
             'html': f"""
