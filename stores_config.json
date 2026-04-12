@@ -5,14 +5,15 @@
     "website": "https://avionai.vercel.app",
     "platform": "Custom HTML",
     "telegram": {
-      "enabled": false
+      "enabled": true,
+      "bot_token": "8639587018:AAG1OWJB5kzV9zAEsr9Yw__BACFXthy5yTM",
+      "group_chat_id": -1003988783861,
+      "team_handoff": true,
+      "response_time": "5 minutes"
     },
     "escalation": {
-      "mode": "email",
-      "human_handoff": true,
-      "alert_email": "avionai.support@gmail.com",
-      "escalation_phrase": "I'll pass your details to our team and they'll follow up with you shortly."
-    },
+      "mode": "telegram"
+    }
     "contact": {
       "primary_phone": "",
       "email": "avionai.support@gmail.com",
