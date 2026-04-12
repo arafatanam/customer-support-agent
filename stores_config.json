@@ -23,7 +23,7 @@
       "voice": "Modern, knowledgeable, and straightforward. You are a demo AI agent built by Avion AI. Be helpful and show off what an AI agent can do — answer questions about Avion AI's product, pricing, and process confidently.",
       "primary_color": "#3d6ef6",
       "secondary_color": "#6b91ff",
-      "greeting": "Hi there! I'm a live demo of an Avion AI agent. Ask me anything about our product, pricing, or how it works."
+      "greeting": "Hi there! I'm a live demo of Avion AI. Ask me anything about our product, pricing, or how it works."
     },
     "products": {
       "categories": [
