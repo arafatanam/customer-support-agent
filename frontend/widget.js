@@ -37,6 +37,19 @@ class SupportWidget {
         document.getElementById('sw-send-btn').addEventListener('click', () => this.sendMessage());
     }
 
+    // Helper: Convert markdown to HTML (bold, italic, etc.)
+    formatMarkdown(text) {
+        // Bold: **text** or __text__
+        text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        text = text.replace(/__(.*?)__/g, '<strong>$1</strong>');
+        // Italic: *text* or _text_
+        text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+        text = text.replace(/_(.*?)_/g, '<em>$1</em>');
+        // Line breaks
+        text = text.replace(/\n/g, '<br>');
+        return text;
+    }
+
     injectStyles() {
         if (document.getElementById('sw-styles')) return;
         const p  = this.primaryColor;
@@ -343,9 +356,12 @@ class SupportWidget {
         const botIcon  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>`;
         const userIcon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>`;
 
+        // Format markdown to HTML for bot messages only
+        const formattedText = sender === 'bot' ? this.formatMarkdown(text) : this.escapeHtml(text);
+
         div.innerHTML = `
             <div class="sw-msg-av">${sender === 'bot' ? botIcon : userIcon}</div>
-            <div class="sw-bubble">${this.escapeHtml(text)}</div>`;
+            <div class="sw-bubble">${sender === 'bot' ? formattedText : this.escapeHtml(text)}</div>`;
         msgs.insertBefore(div, typing);
         msgs.scrollTop = msgs.scrollHeight;
     }
@@ -364,7 +380,7 @@ class SupportWidget {
         div.innerHTML = `
             <p style="margin:0 0 4px;font-weight:600;">✅ Team Notified!</p>
             <p style="margin:0 0 4px;font-size:12px;">
-                A team member will be with you shortly.
+                Our team will join this chat shortly.
             </p>`;
         msgs.insertBefore(div, typing);
         msgs.scrollTop = msgs.scrollHeight;
@@ -403,42 +419,10 @@ class SupportWidget {
         }, 2500);
     }
 
-    showContactForm() {
-        const msgs   = document.getElementById('sw-messages');
-        const typing = document.getElementById('sw-typing');
-        
-        const formDiv = document.createElement('div');
-        formDiv.className = 'sw-contact-form';
-        formDiv.innerHTML = `
-            <p>📧 Could you please provide your email address?</p>
-            <input type="email" id="contact-email" class="sw-contact-input" placeholder="Your email address" />
-            <button id="submit-contact" class="sw-contact-button">Notify Team →</button>
-            <div class="sw-contact-note">We'll notify our team and they'll join this chat</div>
-        `;
-        
-        msgs.insertBefore(formDiv, typing);
-        msgs.scrollTop = msgs.scrollHeight;
-        
-        document.getElementById('submit-contact').onclick = () => {
-            const email = document.getElementById('contact-email').value;
-            
-            if (email && email.includes('@')) {
-                this.customerEmail = email;
-                this.awaitingContact = false;
-                formDiv.remove();
-                this.callAPI(this.pendingUrgentMessage || "URGENT: Please contact me", email);
-            } else {
-                alert('Please provide a valid email address');
-            }
-        };
-    }
-
-    async callAPI(message, contactValue) {
+    async callAPI(message, isUrgent = false) {
         this.showTyping(true);
         document.getElementById('sw-send-btn').disabled = true;
         this.isTyping = true;
-
-        const isEmail = contactValue && this.looksLikeEmail(contactValue);
 
         try {
             const res  = await fetch(`${this.apiUrl}/chat`, {
@@ -448,7 +432,7 @@ class SupportWidget {
                     message,
                     conversation_id: this.conversationId,
                     store_id:        this.storeId,
-                    email:           isEmail ? contactValue : this.customerEmail || ''
+                    email:           this.customerEmail || ''
                 })
             });
             const data = await res.json();
@@ -457,21 +441,17 @@ class SupportWidget {
             if (data.conversation_id) this.conversationId = data.conversation_id;
 
             if (data.ask_contact) {
-                this.awaitingContact      = true;
+                this.awaitingContact = true;
                 this.pendingUrgentMessage = message;
                 this.addMessage('bot', data.response);
-                this.showContactForm();
-
             } else if (data.handoff_initiated) {
                 this.addMessage('bot', data.response);
                 this.showConfirmation();
-                this.awaitingContact      = false;
+                this.awaitingContact = false;
                 this.pendingUrgentMessage = '';
                 this.startPolling();
-
             } else if (data.handoff_active) {
                 this.startPolling();
-
             } else {
                 this.addMessage('bot', data.response);
             }
@@ -495,14 +475,16 @@ class SupportWidget {
         this.addMessage('user', msg);
 
         if (this.awaitingContact) {
+            // Customer is providing email in the chat input
             if (!this.looksLikeEmail(msg)) {
-                this.addMessage('bot', 'Please provide a valid email address.');
+                this.addMessage('bot', 'Please provide a valid email address so we can reach you if needed.');
                 return;
             }
+            this.customerEmail = msg;
             this.awaitingContact = false;
-            await this.callAPI(msg, msg);
+            await this.callAPI(this.pendingUrgentMessage, true);
         } else {
-            await this.callAPI(msg, null);
+            await this.callAPI(msg, false);
         }
     }
 }
