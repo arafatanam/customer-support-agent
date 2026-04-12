@@ -26,6 +26,8 @@ ACTIVE_HANDOFFS = {}
 AGENT_MESSAGES = defaultdict(list)
 
 # CONFIGURATION
+
+
 def load_store_configs():
     try:
         with open('stores_config.json', 'r') as f:
@@ -33,12 +35,16 @@ def load_store_configs():
     except FileNotFoundError:
         return {}
 
+
 STORE_CONFIGS = load_store_configs()
+
 
 def get_store(store_id):
     return STORE_CONFIGS.get(store_id) or STORE_CONFIGS.get('default', {})
 
 # SUPABASE HELPERS (Conversation State)
+
+
 def set_conversation_state(conversation_id, state, value):
     """Store metadata like waiting_for_contact, handoff_active, etc."""
     try:
@@ -54,6 +60,7 @@ def set_conversation_state(conversation_id, state, value):
             .execute()
     except Exception as e:
         print(f"Error setting state [{state}]: {e}")
+
 
 def get_conversation_state(conversation_id, state):
     """Retrieve metadata for a conversation"""
@@ -94,6 +101,8 @@ def get_conversation_history(conversation_id):
         return "\n(Unable to fetch history)"
 
 # TELEGRAM ALERT (with full conversation history)
+
+
 def send_telegram_alert(store_config, customer_info, conversation_history):
     """Send urgent alert to Telegram group with full chat history"""
     tg = store_config.get('telegram', {})
@@ -105,7 +114,8 @@ def send_telegram_alert(store_config, customer_info, conversation_history):
 
     keyboard = {
         "inline_keyboard": [[
-            {"text": "✅ I'll handle this", "callback_data": f"handle__{store_id}__{conv_id}"}
+            {"text": "✅ I'll handle this",
+                "callback_data": f"handle__{store_id}__{conv_id}"}
         ]]
     }
 
@@ -141,13 +151,18 @@ def send_telegram_alert(store_config, customer_info, conversation_history):
         return None
 
 # VALIDATION HELPERS
+
+
 def is_valid_email(text):
     return bool(re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', text.strip()))
 
 # HEALTH & TEST ENDPOINTS
+
+
 @app.route('/health', methods=['GET'])
 def health():
     return jsonify({'status': 'healthy'})
+
 
 @app.route('/test-groq', methods=['GET'])
 def test_groq():
@@ -161,6 +176,7 @@ def test_groq():
     except Exception as e:
         return jsonify({'status': 'error', 'error': str(e)}), 500
 
+
 @app.route('/poll', methods=['GET'])
 def poll():
     """Widget polls here for agent messages during handoff"""
@@ -171,6 +187,8 @@ def poll():
     return jsonify({'messages': messages})
 
 # TELEGRAM WEBHOOK (Handles button clicks and agent replies)
+
+
 @app.route('/telegram-webhook', methods=['POST'])
 def telegram_webhook():
     try:
@@ -196,8 +214,10 @@ def telegram_webhook():
 
                 # Mark handoff as active
                 set_conversation_state(conversation_id, 'handoff_active', True)
-                set_conversation_state(conversation_id, 'agent_name', agent_name)
-                set_conversation_state(conversation_id, 'agent_telegram_id', from_user.get('id'))
+                set_conversation_state(
+                    conversation_id, 'agent_name', agent_name)
+                set_conversation_state(
+                    conversation_id, 'agent_telegram_id', from_user.get('id'))
 
                 ACTIVE_HANDOFFS[conversation_id] = {
                     'team_member': from_user,
@@ -255,7 +275,8 @@ def telegram_webhook():
                         break
 
                 if matched_conv_id:
-                    store_config = get_store(matched_store) if matched_store else {}
+                    store_config = get_store(
+                        matched_store) if matched_store else {}
                     tg = store_config.get('telegram', {})
                     bot_token = tg.get('bot_token')
                     group_chat_id = chat.get('id')
@@ -283,6 +304,7 @@ def telegram_webhook():
     except Exception as e:
         print(f"Webhook error: {e}")
         return "OK", 200
+
 
 # MAIN CHAT ENDPOINT
 URGENT_KEYWORDS = [
@@ -316,17 +338,21 @@ def chat():
 
         # STEP 1: Check if waiting for email
         if conversation_id != 'new':
-            waiting = get_conversation_state(conversation_id, 'waiting_for_contact')
+            waiting = get_conversation_state(
+                conversation_id, 'waiting_for_contact')
             if waiting:
                 print("Waiting for email - processing...")
                 email_in_msg = is_valid_email(message)
 
                 if email_in_msg:
-                    set_conversation_state(conversation_id, 'waiting_for_contact', False)
-                    urgent_msg = get_conversation_state(conversation_id, 'urgent_message') or "URGENT: Please contact me"
+                    set_conversation_state(
+                        conversation_id, 'waiting_for_contact', False)
+                    urgent_msg = get_conversation_state(
+                        conversation_id, 'urgent_message') or "URGENT: Please contact me"
 
                     # Get full conversation history
-                    conversation_history = get_conversation_history(conversation_id)
+                    conversation_history = get_conversation_history(
+                        conversation_id)
 
                     customer_info = {
                         'email': message,
@@ -335,14 +361,16 @@ def chat():
                     }
 
                     if uses_telegram:
-                        result = send_telegram_alert(store_config, customer_info, conversation_history)
+                        result = send_telegram_alert(
+                            store_config, customer_info, conversation_history)
                         if result and result.get('ok'):
                             return jsonify({
-                                'response': f"Thank you! Our team has been notified. Someone will reach out to you shortly.",
+                                'response': f"✅ Thank you! Our team has been notified and will join this chat shortly.",
                                 'conversation_id': conversation_id,
                                 'handoff_initiated': True
                             })
                 else:
+                    # Return a proper response asking for email again
                     return jsonify({
                         'response': "Please share your email address so we can reach you if needed.",
                         'conversation_id': conversation_id,
@@ -351,7 +379,8 @@ def chat():
 
         # STEP 2: Check if handoff already active
         if conversation_id != 'new':
-            handoff_active = get_conversation_state(conversation_id, 'handoff_active')
+            handoff_active = get_conversation_state(
+                conversation_id, 'handoff_active')
             if handoff_active and uses_telegram:
                 bot_token = tg_config.get('bot_token')
                 group_chat_id = tg_config.get('group_chat_id')
@@ -384,7 +413,8 @@ def chat():
                     .execute()
                 conversation_id = result.data[0]['id']
 
-            set_conversation_state(conversation_id, 'waiting_for_contact', True)
+            set_conversation_state(
+                conversation_id, 'waiting_for_contact', True)
             set_conversation_state(conversation_id, 'urgent_message', message)
 
             return jsonify({
@@ -398,7 +428,8 @@ def chat():
             f"Q: {f['question']}\nA: {f['answer']}"
             for f in store_config.get('faqs', [])
         )
-        products_text = ", ".join(store_config.get('products', {}).get('top_products', []))
+        products_text = ", ".join(store_config.get(
+            'products', {}).get('top_products', []))
 
         system_prompt_parts = [
             f"You are a friendly, helpful customer support agent for {store_name}.",
@@ -424,9 +455,10 @@ def chat():
             "Rules:",
             "1. Keep responses concise, warm, and on-brand.",
             "2. For order tracking, always refer customers to the store phone number.",
-            "3. If someone asks for urgent help, ask for their EMAIL ONLY. Say: 'Could you please provide your email address so our team can contact you?'",
+            "3. If someone asks for urgent help, ask for their EMAIL ONLY. Say: 'Our team will be with you shortly. In case we can't reach you in time, could you please share your email address?'",
             "4. Never ask for phone numbers.",
-            f"5. Always stay in character as a support agent for {store_name}."
+            f"5. Always stay in character as a support agent for {store_name}.",
+            "6. Use markdown formatting: **bold** for emphasis, and line breaks for readability."
         ])
 
         system_prompt = "\n".join(system_prompt_parts)
@@ -453,7 +485,7 @@ def chat():
             model="llama-3.3-70b-versatile",
             messages=messages,
             temperature=0.7,
-            max_tokens=200
+            max_tokens=250
         )
         ai_message = ai_resp.choices[0].message.content
         messages.append({"role": "assistant", "content": ai_message})
