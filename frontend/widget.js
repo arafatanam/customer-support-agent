@@ -485,8 +485,7 @@ class SupportWidget {
             }
             this.customerEmail = msg;
             this.awaitingContact = false;
-            // Send the original urgent message to trigger Telegram alert
-            await this.callAPI(this.pendingUrgentMessage, true);
+            await this.callAPI(msg);
         } else {
             await this.callAPI(msg, false);
         }
