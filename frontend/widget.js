@@ -1,71 +1,65 @@
 class SupportWidget {
-  constructor(storeId, options = {}) {
-    this.storeId = storeId;
-    this.apiUrl = "https://customer-support-agent-y6qb.onrender.com";
-    this.conversationId = "new";
-    this.isOpen = false;
-    this.isTyping = false;
+    constructor(storeId, options = {}) {
+        this.storeId        = storeId;
+        this.apiUrl         = "https://customer-support-agent-y6qb.onrender.com";
+        this.conversationId = "new";
+        this.isOpen         = false;
+        this.isTyping       = false;
 
-    // Handoff state
-    this.awaitingContact = false;
-    this.pendingUrgentMessage = "";
-    this.handoffActive = false;
-    this.pollInterval = null;
-    this.customerEmail = null;
+        // Handoff state
+        this.awaitingContact      = false;
+        this.pendingUrgentMessage = '';
+        this.handoffActive        = false;
+        this.pollInterval         = null;
+        this.customerEmail        = null;
 
-    // Branding from options
-    this.storeName = options.storeName || "Support";
-    this.primaryColor = options.primaryColor || "#304237";
-    this.secondaryColor = options.secondaryColor || "#C4A467";
-    this.position = options.position || "bottom-right";
-    this.greeting = options.greeting || "Welcome! How can I help you today?";
+        // Branding from options
+        this.storeName      = options.storeName      || 'Support';
+        this.primaryColor   = options.primaryColor   || '#304237';
+        this.secondaryColor = options.secondaryColor || '#C4A467';
+        this.position       = options.position       || 'bottom-right';
+        this.greeting       = options.greeting       || 'Welcome! How can I help you today?';
 
-    this.init();
-  }
+        this.init();
+    }
 
-  init() {
-    this.injectStyles();
-    this.createButton();
-    this.createChatWindow();
+    init() {
+        this.injectStyles();
+        this.createButton();
+        this.createChatWindow();
 
-    document
-      .getElementById("sw-chat-input")
-      .addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-          e.preventDefault();
-          this.sendMessage();
-        }
-      });
-    document
-      .getElementById("sw-send-btn")
-      .addEventListener("click", () => this.sendMessage());
-  }
+        document.getElementById('sw-chat-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.sendMessage();
+            }
+        });
+        document.getElementById('sw-send-btn').addEventListener('click', () => this.sendMessage());
+    }
 
-  // Helper: Convert markdown to HTML (bold, italic, etc.)
-  formatMarkdown(text) {
-    // Bold: **text** or __text__
-    text = text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
-    text = text.replace(/__(.*?)__/g, "<strong>$1</strong>");
-    // Italic: *text* or _text_
-    text = text.replace(/\*(.*?)\*/g, "<em>$1</em>");
-    text = text.replace(/_(.*?)_/g, "<em>$1</em>");
-    // Line breaks
-    text = text.replace(/\n/g, "<br>");
-    return text;
-  }
+    formatMarkdown(text) {
+        // Bold: **text** or __text__
+        text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        text = text.replace(/__(.*?)__/g, '<strong>$1</strong>');
+        // Italic: *text* or _text_
+        text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+        text = text.replace(/_(.*?)_/g, '<em>$1</em>');
+        // Line breaks
+        text = text.replace(/\n/g, '<br>');
+        return text;
+    }
 
-  injectStyles() {
-    if (document.getElementById("sw-styles")) return;
-    const p = this.primaryColor;
-    const s = this.secondaryColor;
-    const pos =
-      this.position === "bottom-left"
-        ? "left: 24px; right: auto;"
-        : "right: 24px; left: auto;";
+    injectStyles() {
+        if (document.getElementById('sw-styles')) return;
+        const p  = this.primaryColor;
+        const s  = this.secondaryColor;
+        const pos = this.position === 'bottom-left'
+            ? 'left: 24px; right: auto;'
+            : 'right: 24px; left: auto;';
 
-    const style = document.createElement("style");
-    style.id = "sw-styles";
-    style.textContent = `
+        const style = document.createElement('style');
+        style.id    = 'sw-styles';
+        style.textContent = `
             #sw-btn {
                 position: fixed; bottom: 24px; ${pos}
                 width: 56px; height: 56px;
@@ -233,14 +227,14 @@ class SupportWidget {
             }
             .sw-footer-note span { color: ${s}; }
         `;
-    document.head.appendChild(style);
-  }
+        document.head.appendChild(style);
+    }
 
-  createButton() {
-    const btn = document.createElement("button");
-    btn.id = "sw-btn";
-    btn.setAttribute("aria-label", `Open ${this.storeName} support chat`);
-    btn.innerHTML = `
+    createButton() {
+        const btn  = document.createElement('button');
+        btn.id     = 'sw-btn';
+        btn.setAttribute('aria-label', `Open ${this.storeName} support chat`);
+        btn.innerHTML = `
             <svg class="sw-icon-open" width="22" height="22" viewBox="0 0 24 24" fill="none"
                 stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -249,14 +243,14 @@ class SupportWidget {
                 stroke="white" stroke-width="2.5" stroke-linecap="round">
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>`;
-    btn.addEventListener("click", () => this.toggleChat());
-    document.body.appendChild(btn);
-    this.btn = btn;
-  }
+        btn.addEventListener('click', () => this.toggleChat());
+        document.body.appendChild(btn);
+        this.btn = btn;
+    }
 
-  createChatWindow() {
-    const wrap = document.createElement("div");
-    wrap.innerHTML = `
+    createChatWindow() {
+        const wrap = document.createElement('div');
+        wrap.innerHTML = `
             <div id="sw-window" role="dialog" aria-label="${this.storeName} support chat">
                 <div id="sw-agent-banner">● Live — connected with a support agent</div>
                 <div id="sw-header">
@@ -325,198 +319,176 @@ class SupportWidget {
                     <div class="sw-footer-note">Powered by <span>Avion AI</span></div>
                 </div>
             </div>`;
-    document.body.appendChild(wrap);
+        document.body.appendChild(wrap);
 
-    this.win = document.getElementById("sw-window");
-    document
-      .getElementById("sw-close-btn")
-      .addEventListener("click", () => this.toggleChat());
-  }
-
-  toggleChat() {
-    this.isOpen = !this.isOpen;
-    this.win.style.display = this.isOpen ? "flex" : "";
-    if (this.isOpen) {
-      requestAnimationFrame(() => this.win.classList.add("open"));
-      this.btn.classList.add("open");
-      setTimeout(() => document.getElementById("sw-chat-input").focus(), 300);
-    } else {
-      this.win.classList.remove("open");
-      this.btn.classList.remove("open");
-      setTimeout(() => {
-        this.win.style.display = "none";
-      }, 300);
+        this.win = document.getElementById('sw-window');
+        document.getElementById('sw-close-btn').addEventListener('click', () => this.toggleChat());
     }
-  }
 
-  escapeHtml(text) {
-    return String(text)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
+    toggleChat() {
+        this.isOpen = !this.isOpen;
+        this.win.style.display = this.isOpen ? 'flex' : '';
+        if (this.isOpen) {
+            requestAnimationFrame(() => this.win.classList.add('open'));
+            this.btn.classList.add('open');
+            setTimeout(() => document.getElementById('sw-chat-input').focus(), 300);
+        } else {
+            this.win.classList.remove('open');
+            this.btn.classList.remove('open');
+            setTimeout(() => { this.win.style.display = 'none'; }, 300);
+        }
+    }
 
-  addMessage(sender, text) {
-    if (!text) return;
-    const msgs = document.getElementById("sw-messages");
-    const typing = document.getElementById("sw-typing");
-    const div = document.createElement("div");
-    div.className = `sw-msg ${sender}`;
+    escapeHtml(text) {
+        return String(text)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
 
-    const botIcon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>`;
-    const userIcon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>`;
+    addMessage(sender, text) {
+        if (!text) return;
+        const msgs   = document.getElementById('sw-messages');
+        const typing = document.getElementById('sw-typing');
+        const div    = document.createElement('div');
+        div.className = `sw-msg ${sender}`;
 
-    // Format markdown to HTML for bot messages only
-    const formattedText =
-      sender === "bot" ? this.formatMarkdown(text) : this.escapeHtml(text);
+        const botIcon  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>`;
+        const userIcon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>`;
 
-    div.innerHTML = `
-            <div class="sw-msg-av">${sender === "bot" ? botIcon : userIcon}</div>
-            <div class="sw-bubble">${sender === "bot" ? formattedText : this.escapeHtml(text)}</div>`;
-    msgs.insertBefore(div, typing);
-    msgs.scrollTop = msgs.scrollHeight;
-  }
+        const formattedText = sender === 'bot' ? this.formatMarkdown(text) : this.escapeHtml(text);
 
-  showTyping(show) {
-    const el = document.getElementById("sw-typing");
-    el.classList.toggle("visible", show);
-    if (show) document.getElementById("sw-messages").scrollTop = 999999;
-  }
+        div.innerHTML = `
+            <div class="sw-msg-av">${sender === 'bot' ? botIcon : userIcon}</div>
+            <div class="sw-bubble">${formattedText}</div>`;
+        msgs.insertBefore(div, typing);
+        msgs.scrollTop = msgs.scrollHeight;
+    }
 
-  showConfirmation() {
-    const msgs = document.getElementById("sw-messages");
-    const typing = document.getElementById("sw-typing");
-    const div = document.createElement("div");
-    div.className = "sw-confirm-card";
-    div.innerHTML = `
+    showTyping(show) {
+        const el = document.getElementById('sw-typing');
+        el.classList.toggle('visible', show);
+        if (show) document.getElementById('sw-messages').scrollTop = 999999;
+    }
+
+    showConfirmation() {
+        const msgs   = document.getElementById('sw-messages');
+        const typing = document.getElementById('sw-typing');
+        const div    = document.createElement('div');
+        div.className = 'sw-confirm-card';
+        div.innerHTML = `
             <p style="margin:0 0 4px;font-weight:600;">✅ Team Notified!</p>
             <p style="margin:0 0 4px;font-size:12px;">
                 Our team will join this chat shortly.
             </p>`;
-    msgs.insertBefore(div, typing);
-    msgs.scrollTop = msgs.scrollHeight;
-  }
+        msgs.insertBefore(div, typing);
+        msgs.scrollTop = msgs.scrollHeight;
+    }
 
-  setLiveMode(agentName) {
-    this.handoffActive = true;
-    const banner = document.getElementById("sw-agent-banner");
-    if (banner) banner.classList.add("visible");
-    const dot = document.getElementById("sw-status-dot");
-    const text = document.getElementById("sw-status-text");
-    const inp = document.getElementById("sw-chat-input");
-    if (dot) dot.classList.add("live");
-    if (text) text.textContent = `Chatting with ${agentName || "support"}`;
-    if (inp) inp.placeholder = "Reply to agent…";
-  }
+    setLiveMode(agentName) {
+        this.handoffActive = true;
+        const banner = document.getElementById('sw-agent-banner');
+        if (banner) banner.classList.add('visible');
+        const dot  = document.getElementById('sw-status-dot');
+        const text = document.getElementById('sw-status-text');
+        const inp  = document.getElementById('sw-chat-input');
+        if (dot)  dot.classList.add('live');
+        if (text) text.textContent = `Chatting with ${agentName || 'support'}`;
+        if (inp)  inp.placeholder = 'Reply to agent…';
+    }
 
-  looksLikeEmail(v) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-  }
+    looksLikeEmail(v) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+    }
 
-  startPolling() {
-    if (this.pollInterval) return;
-    this.pollInterval = setInterval(async () => {
-      if (this.conversationId === "new") return;
-      try {
-        const res = await fetch(
-          `${this.apiUrl}/poll?conversation_id=${this.conversationId}`,
-        );
-        const data = await res.json();
-        if (data.messages && data.messages.length > 0) {
-          data.messages.forEach((msg) => {
-            this.addMessage("bot", msg.text);
-            this.setLiveMode(msg.agent);
-          });
+    startPolling() {
+        if (this.pollInterval) return;
+        this.pollInterval = setInterval(async () => {
+            if (this.conversationId === 'new') return;
+            try {
+                const res  = await fetch(`${this.apiUrl}/poll?conversation_id=${this.conversationId}`);
+                const data = await res.json();
+                if (data.messages && data.messages.length > 0) {
+                    data.messages.forEach(msg => {
+                        this.addMessage('bot', msg.text);
+                        this.setLiveMode(msg.agent);
+                    });
+                }
+            } catch (e) { /* silent */ }
+        }, 2500);
+    }
+
+    async callAPI(message, isUrgent = false) {
+        this.showTyping(true);
+        document.getElementById('sw-send-btn').disabled = true;
+        this.isTyping = true;
+
+        const requestBody = {
+            message: message,
+            conversation_id: this.conversationId,
+            store_id: this.storeId,
+            email: this.customerEmail || ''
+        };
+
+        try {
+            console.log('Sending request:', requestBody);
+            const res = await fetch(`${this.apiUrl}/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
+            });
+            const data = await res.json();
+            console.log('Response:', data);
+            this.showTyping(false);
+
+            if (data.conversation_id) this.conversationId = data.conversation_id;
+
+            if (data.ask_contact) {
+                this.awaitingContact = true;
+                this.pendingUrgentMessage = message;
+                this.addMessage('bot', data.response);
+            } else if (data.handoff_initiated) {
+                this.addMessage('bot', data.response);
+                this.showConfirmation();
+                this.awaitingContact = false;
+                this.pendingUrgentMessage = '';
+                this.startPolling();
+            } else if (data.handoff_active) {
+                this.startPolling();
+            } else if (data.response) {
+                this.addMessage('bot', data.response);
+            } else if (data.error) {
+                this.addMessage('bot', 'Sorry, something went wrong. Please try again.');
+            }
+
+        } catch (err) {
+            this.showTyping(false);
+            this.addMessage('bot', 'Something went wrong. Please try again in a moment.');
+            console.error('SupportWidget error:', err);
+        } finally {
+            this.isTyping = false;
+            document.getElementById('sw-send-btn').disabled = false;
         }
-      } catch (e) {
-        /* silent */
-      }
-    }, 2500);
-  }
-
-  async callAPI(message, isUrgent = false) {
-    this.showTyping(true);
-    document.getElementById("sw-send-btn").disabled = true;
-    this.isTyping = true;
-
-    // Prepare request body
-    const requestBody = {
-      message,
-      conversation_id: this.conversationId,
-      store_id: this.storeId,
-      email: this.customerEmail || "",
-    };
-
-    // Only add urgent flag if it's an urgent request
-    if (isUrgent) {
-      requestBody.urgent = true;
     }
 
-    try {
-      const res = await fetch(`${this.apiUrl}/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody),
-      });
-      const data = await res.json();
-      this.showTyping(false);
+    async sendMessage() {
+        const input = document.getElementById('sw-chat-input');
+        const msg = input.value.trim();
+        if (!msg || this.isTyping) return;
 
-      if (data.conversation_id) this.conversationId = data.conversation_id;
+        input.value = '';
+        this.addMessage('user', msg);
 
-      if (data.ask_contact) {
-        this.awaitingContact = true;
-        this.pendingUrgentMessage = message;
-        this.addMessage("bot", data.response);
-      } else if (data.handoff_initiated) {
-        this.addMessage("bot", data.response);
-        this.showConfirmation();
-        this.awaitingContact = false;
-        this.pendingUrgentMessage = "";
-        this.startPolling();
-      } else if (data.handoff_active) {
-        this.startPolling();
-      } else if (data.response) {
-        this.addMessage("bot", data.response);
-      } else if (data.error) {
-        this.addMessage(
-          "bot",
-          "Sorry, something went wrong. Please try again.",
-        );
-      }
-    } catch (err) {
-      this.showTyping(false);
-      this.addMessage(
-        "bot",
-        "Something went wrong. Please try again in a moment.",
-      );
-      console.error("SupportWidget error:", err);
-    } finally {
-      this.isTyping = false;
-      document.getElementById("sw-send-btn").disabled = false;
+        if (this.awaitingContact) {
+            if (!this.looksLikeEmail(msg)) {
+                this.addMessage('bot', 'Please provide a valid email address.');
+                return;
+            }
+            this.customerEmail = msg;
+            this.awaitingContact = false;
+            // Send the original urgent message to trigger Telegram alert
+            await this.callAPI(this.pendingUrgentMessage, true);
+        } else {
+            await this.callAPI(msg, false);
+        }
     }
-  }
-
-  async sendMessage() {
-    const input = document.getElementById("sw-chat-input");
-    const msg = input.value.trim();
-    if (!msg || this.isTyping) return;
-
-    input.value = "";
-    this.addMessage("user", msg);
-
-    if (this.awaitingContact) {
-      // Check if the message is a valid email
-      if (!this.looksLikeEmail(msg)) {
-        this.addMessage("bot", "Please provide a valid email address.");
-        return;
-      }
-      this.customerEmail = msg;
-      this.awaitingContact = false;
-      // Send the ORIGINAL urgent message, not the email
-      await this.callAPI(this.pendingUrgentMessage, true);
-    } else {
-      await this.callAPI(msg, false);
-    }
-  }
 }
