@@ -6,14 +6,12 @@ class SupportWidget {
         this.isOpen         = false;
         this.isTyping       = false;
 
-        // Handoff state
         this.awaitingContact      = false;
         this.pendingUrgentMessage = '';
         this.handoffActive        = false;
         this.pollInterval         = null;
         this.customerEmail        = null;
 
-        // Branding from options
         this.storeName      = options.storeName      || 'Support';
         this.primaryColor   = options.primaryColor   || '#304237';
         this.secondaryColor = options.secondaryColor || '#C4A467';
@@ -38,21 +36,18 @@ class SupportWidget {
     }
 
     formatMarkdown(text) {
-        // Bold: **text** or __text__
         text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
         text = text.replace(/__(.*?)__/g, '<strong>$1</strong>');
-        // Italic: *text* or _text_
         text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
         text = text.replace(/_(.*?)_/g, '<em>$1</em>');
-        // Line breaks
         text = text.replace(/\n/g, '<br>');
         return text;
     }
 
     injectStyles() {
         if (document.getElementById('sw-styles')) return;
-        const p  = this.primaryColor;
-        const s  = this.secondaryColor;
+        const p   = this.primaryColor;
+        const s   = this.secondaryColor;
         const pos = this.position === 'bottom-left'
             ? 'left: 24px; right: auto;'
             : 'right: 24px; left: auto;';
@@ -122,6 +117,7 @@ class SupportWidget {
             }
             .sw-status-dot.live { background: #4ade80; animation: sw-blink 1s ease-in-out infinite; }
             @keyframes sw-blink { 0%,100%{opacity:1}50%{opacity:0.3} }
+
             #sw-close-btn {
                 margin-left: auto; width: 28px; height: 28px; border-radius: 6px;
                 border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.08);
@@ -231,8 +227,8 @@ class SupportWidget {
     }
 
     createButton() {
-        const btn  = document.createElement('button');
-        btn.id     = 'sw-btn';
+        const btn = document.createElement('button');
+        btn.id    = 'sw-btn';
         btn.setAttribute('aria-label', `Open ${this.storeName} support chat`);
         btn.innerHTML = `
             <svg class="sw-icon-open" width="22" height="22" viewBox="0 0 24 24" fill="none"
@@ -241,7 +237,8 @@ class SupportWidget {
             </svg>
             <svg class="sw-icon-close" width="18" height="18" viewBox="0 0 24 24" fill="none"
                 stroke="white" stroke-width="2.5" stroke-linecap="round">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
             </svg>`;
         btn.addEventListener('click', () => this.toggleChat());
         document.body.appendChild(btn);
@@ -356,7 +353,6 @@ class SupportWidget {
         const userIcon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>`;
 
         const formattedText = sender === 'bot' ? this.formatMarkdown(text) : this.escapeHtml(text);
-
         div.innerHTML = `
             <div class="sw-msg-av">${sender === 'bot' ? botIcon : userIcon}</div>
             <div class="sw-bubble">${formattedText}</div>`;
@@ -377,9 +373,7 @@ class SupportWidget {
         div.className = 'sw-confirm-card';
         div.innerHTML = `
             <p style="margin:0 0 4px;font-weight:600;">✅ Team Notified!</p>
-            <p style="margin:0 0 4px;font-size:12px;">
-                Our team will join this chat shortly.
-            </p>`;
+            <p style="margin:0;font-size:12px;">Our team will join this chat shortly.</p>`;
         msgs.insertBefore(div, typing);
         msgs.scrollTop = msgs.scrollHeight;
     }
@@ -397,11 +391,14 @@ class SupportWidget {
     }
 
     looksLikeEmail(v) {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
     }
 
+    // ── FIX: start polling as soon as urgency is detected,
+    //         not only after email is submitted.
     startPolling() {
         if (this.pollInterval) return;
+        console.log('Polling started for conv:', this.conversationId);
         this.pollInterval = setInterval(async () => {
             if (this.conversationId === 'new') return;
             try {
@@ -417,45 +414,48 @@ class SupportWidget {
         }, 2500);
     }
 
-    async callAPI(message, isUrgent = false) {
+    async callAPI(message) {
         this.showTyping(true);
         document.getElementById('sw-send-btn').disabled = true;
-        this.isTyping = true;
-
-        const requestBody = {
-            message: message,
-            conversation_id: this.conversationId,
-            store_id: this.storeId,
-            email: this.customerEmail || ''
-        };
 
         try {
-            console.log('Sending request:', requestBody);
             const res = await fetch(`${this.apiUrl}/chat`, {
-                method: 'POST',
+                method:  'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(requestBody)
+                body:    JSON.stringify({
+                    message,
+                    conversation_id: this.conversationId,
+                    store_id:        this.storeId,
+                    email:           this.customerEmail || ''
+                })
             });
             const data = await res.json();
-            console.log('Response:', data);
             this.showTyping(false);
 
             if (data.conversation_id) this.conversationId = data.conversation_id;
 
             if (data.ask_contact) {
-                this.awaitingContact = true;
+                // Urgency detected — Telegram already notified on backend.
+                // Start polling NOW so agent messages appear even before
+                // the customer submits their email.
+                this.awaitingContact      = true;
                 this.pendingUrgentMessage = message;
                 this.addMessage('bot', data.response);
+                this.startPolling();
+
             } else if (data.handoff_initiated) {
                 this.addMessage('bot', data.response);
                 this.showConfirmation();
-                this.awaitingContact = false;
+                this.awaitingContact      = false;
                 this.pendingUrgentMessage = '';
                 this.startPolling();
+
             } else if (data.handoff_active) {
                 this.startPolling();
+
             } else if (data.response) {
                 this.addMessage('bot', data.response);
+
             } else if (data.error) {
                 this.addMessage('bot', 'Sorry, something went wrong. Please try again.');
             }
@@ -472,22 +472,31 @@ class SupportWidget {
 
     async sendMessage() {
         const input = document.getElementById('sw-chat-input');
-        const msg = input.value.trim();
+        const msg   = input.value.trim();
+
+        // ── FIX: guard isTyping and disable button HERE, before any await,
+        //         so rapid Enter + click can't fire two simultaneous requests.
         if (!msg || this.isTyping) return;
+        this.isTyping = true;
+        document.getElementById('sw-send-btn').disabled = true;
 
         input.value = '';
         this.addMessage('user', msg);
 
         if (this.awaitingContact) {
             if (!this.looksLikeEmail(msg)) {
-                this.addMessage('bot', 'Please provide a valid email address.');
+                this.addMessage('bot', 'Please provide a valid email address (e.g. you@example.com).');
+                this.isTyping = false;
+                document.getElementById('sw-send-btn').disabled = false;
                 return;
             }
-            this.customerEmail = msg;
-            this.awaitingContact = false;
+            // Store email and send it to the backend as the message.
+            // Backend STEP 1 is waiting for exactly this.
+            this.customerEmail    = msg;
+            this.awaitingContact  = false;
             await this.callAPI(msg);
         } else {
-            await this.callAPI(msg, false);
+            await this.callAPI(msg);
         }
     }
 }
