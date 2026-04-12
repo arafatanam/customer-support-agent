@@ -12,23 +12,20 @@ from collections import defaultdict
 app = Flask(__name__)
 CORS(app)
 
+# Environment variables
 supabase_url = os.environ.get('SUPABASE_URL')
 supabase_key = os.environ.get('SUPABASE_KEY')
 groq_api_key = os.environ.get('GROQ_API_KEY')
-sendgrid_api_key = os.environ.get('SENDGRID_API_KEY')
 
+# Initialize clients
 groq_client = Groq(api_key=groq_api_key)
 supabase = create_client(supabase_url, supabase_key)
 
-# In-memory stores
+# In-memory stores for active handoffs and agent messages
 ACTIVE_HANDOFFS = {}
 AGENT_MESSAGES = defaultdict(list)
 
-
-# ─────────────────────────────────────────────
-# CONFIG LOADER
-# ─────────────────────────────────────────────
-
+# CONFIGURATION
 def load_store_configs():
     try:
         with open('stores_config.json', 'r') as f:
@@ -38,16 +35,12 @@ def load_store_configs():
 
 STORE_CONFIGS = load_store_configs()
 
-
 def get_store(store_id):
     return STORE_CONFIGS.get(store_id) or STORE_CONFIGS.get('default', {})
 
-
-# ─────────────────────────────────────────────
-# SUPABASE STATE HELPERS
-# ─────────────────────────────────────────────
-
+# SUPABASE HELPERS (Conversation State)
 def set_conversation_state(conversation_id, state, value):
+    """Store metadata like waiting_for_contact, handoff_active, etc."""
     try:
         result = supabase.table('conversations') \
             .select('metadata') \
@@ -62,8 +55,8 @@ def set_conversation_state(conversation_id, state, value):
     except Exception as e:
         print(f"Error setting state [{state}]: {e}")
 
-
 def get_conversation_state(conversation_id, state):
+    """Retrieve metadata for a conversation"""
     try:
         result = supabase.table('conversations') \
             .select('metadata') \
@@ -77,11 +70,32 @@ def get_conversation_state(conversation_id, state):
         return None
 
 
-# ─────────────────────────────────────────────
-# NOTIFICATION HELPERS
-# ─────────────────────────────────────────────
+def get_conversation_history(conversation_id):
+    """Get full conversation history for Telegram alert"""
+    try:
+        result = supabase.table('conversations') \
+            .select('messages') \
+            .eq('id', conversation_id) \
+            .execute()
+        if result.data and result.data[0].get('messages'):
+            messages = result.data[0]['messages']
+            history = ""
+            for msg in messages[1:]:  # Skip system prompt
+                role = msg.get('role')
+                content = msg.get('content', '')[:300]
+                if role == 'user':
+                    history += f"\n👤 Customer: {content}"
+                elif role == 'assistant':
+                    history += f"\n🤖 AI: {content}"
+            return history
+        return "\n(No conversation history)"
+    except Exception as e:
+        print(f"Error fetching history: {e}")
+        return "\n(Unable to fetch history)"
 
-def send_telegram_alert(store_config, customer_info):
+# TELEGRAM ALERT (with full conversation history)
+def send_telegram_alert(store_config, customer_info, conversation_history):
+    """Send urgent alert to Telegram group with full chat history"""
     tg = store_config.get('telegram', {})
     bot_token = tg.get('bot_token')
     group_chat_id = tg.get('group_chat_id')
@@ -91,23 +105,20 @@ def send_telegram_alert(store_config, customer_info):
 
     keyboard = {
         "inline_keyboard": [[
-            {
-                "text": "✅ I'll handle this",
-                "callback_data": f"handle__{store_id}__{conv_id}"
-            }
+            {"text": "✅ I'll handle this", "callback_data": f"handle__{store_id}__{conv_id}"}
         ]]
     }
 
     message = (
-        f"🔴 *URGENT CUSTOMER SUPPORT NEEDED* 🔴\n"
+        f"*URGENT CUSTOMER SUPPORT NEEDED*\n"
         f"━━━━━━━━━━━━━━━━━━━━━\n"
         f"*Store:* {store_name}\n"
         f"*Time:* {datetime.now().strftime('%I:%M %p, %b %d')}\n\n"
-        f"*Customer contact:*\n"
-        f"📧 Email: {customer_info.get('email', 'Not provided')}\n"
-        f"📱 Phone: {customer_info.get('phone', 'Not provided')}\n"
-        f"💬 Chat ID: `{conv_id}`\n\n"
-        f"*Their message:*\n"
+        f"*Customer Email:* {customer_info.get('email', 'Not provided')}\n\n"
+        f"*Conversation History:*\n"
+        f"```{conversation_history}\n"
+        f"━━━━━━━━━━━━━━━━━━━━━\n"
+        f"*Latest Message:*\n"
         f"\"{customer_info['message'][:200]}\"\n"
         f"━━━━━━━━━━━━━━━━━━━━━\n"
         f"Press the button below to start chatting with this customer:"
@@ -129,77 +140,14 @@ def send_telegram_alert(store_config, customer_info):
         print(f"Telegram error: {e}")
         return None
 
+# VALIDATION HELPERS
+def is_valid_email(text):
+    return bool(re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', text.strip()))
 
-def send_email_alert(store_config, customer_info):
-    escalation = store_config.get('escalation', {})
-    to_email = escalation.get('alert_email')
-    store_name = store_config.get('name', 'Store')
-    conv_id = customer_info['conversation_id']
-
-    if not to_email:
-        print("Email escalation: no alert_email configured")
-        return None
-
-    subject = f"[{store_name}] Urgent Support Request"
-    body = (
-        f"New urgent support request from your AI chat agent.\n\n"
-        f"Store: {store_name}\n"
-        f"Time: {datetime.now().strftime('%I:%M %p, %b %d %Y')}\n\n"
-        f"Customer contact:\n"
-        f"  Email: {customer_info.get('email', 'Not provided')}\n"
-        f"  Phone: {customer_info.get('phone', 'Not provided')}\n"
-        f"  Chat ID: {conv_id}\n\n"
-        f"Their message:\n\"{customer_info['message'][:500]}\"\n\n"
-        f"---\nSent automatically by Avion AI"
-    )
-
-    if sendgrid_api_key:
-        try:
-            resp = requests.post(
-                "https://api.sendgrid.com/v3/mail/send",
-                headers={
-                    "Authorization": f"Bearer {sendgrid_api_key}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "personalizations": [{"to": [{"email": to_email}]}],
-                    "from": {"email": "noreply@avionai.com", "name": "Avion AI"},
-                    "subject": subject,
-                    "content": [{"type": "text/plain", "value": body}]
-                },
-                timeout=10
-            )
-            return {"ok": resp.status_code in (200, 202)}
-        except Exception as e:
-            print(f"SendGrid error: {e}")
-
-    print(f"\n{'='*50}")
-    print(f"EMAIL ALERT (no SendGrid configured)")
-    print(f"To: {to_email}")
-    print(f"Subject: {subject}")
-    print(body)
-    print(f"{'='*50}\n")
-    return {"ok": True}
-
-
-# ─────────────────────────────────────────────
-# ROUTES
-# ─────────────────────────────────────────────
-
-@app.route('/')
-def home():
-    return jsonify({
-        'status': 'online',
-        'message': 'Avion AI — Multi-Store Support API',
-        'stores': list(STORE_CONFIGS.keys()),
-        'endpoints': ['/chat', '/poll', '/health', '/telegram-webhook', '/test-groq']
-    })
-
-
+# HEALTH & TEST ENDPOINTS
 @app.route('/health', methods=['GET'])
 def health():
     return jsonify({'status': 'healthy'})
-
 
 @app.route('/test-groq', methods=['GET'])
 def test_groq():
@@ -213,92 +161,22 @@ def test_groq():
     except Exception as e:
         return jsonify({'status': 'error', 'error': str(e)}), 500
 
-@app.route('/api/contact', methods=['POST'])
-def contact_form():
-    try:
-        data = request.json
-        name = data.get('name')
-        email = data.get('email')
-        company = data.get('company', '')
-        message = data.get('message')
-
-        if not name or not email or not message:
-            return jsonify({'error': 'Name, email, and message are required.'}), 400
-
-        resend_key = os.environ.get('RESEND_KEY')
-        
-        if not resend_key:
-            print("⚠️ RESEND_KEY not set")
-            return jsonify({'error': 'Email service not configured'}), 500
-
-        headers = {
-            'Authorization': f'Bearer {resend_key}',
-            'Content-Type': 'application/json'
-        }
-        
-        payload = {
-            'from': 'onboarding@resend.dev',  # Change to your verified domain later
-            'to': ['arafatanam01@gmail.com'],
-            'subject': f'New Avion AI Inquiry from {name}',
-            'reply_to': email,
-            'html': f"""
-                <h2>New Inquiry from Avion AI Website</h2>
-                <p><strong>Name:</strong> {name}</p>
-                <p><strong>Email:</strong> {email}</p>
-                <p><strong>Company/Website:</strong> {company or 'Not provided'}</p>
-                <p><strong>Message:</strong></p>
-                <p>{message.replace(chr(10), '<br>')}</p>
-                <hr>
-                <p style="color: #666; font-size: 12px;">Sent from avionai.com contact form</p>
-            """,
-            'text': f"""
-New Inquiry from Avion AI Website
-
-Name: {name}
-Email: {email}
-Company/Website: {company or 'Not provided'}
-
-Message:
-{message}
-
----
-Sent from avionai.com contact form
-"""
-        }
-        
-        response = requests.post(
-            'https://api.resend.com/emails',
-            headers=headers,
-            json=payload,
-            timeout=10
-        )
-        
-        if response.status_code in (200, 201):
-            print(f"✅ Contact form email sent from {email}")
-            return jsonify({'success': True}), 200
-        else:
-            print(f"❌ Resend error: {response.status_code} - {response.text}")
-            return jsonify({'error': 'Failed to send email'}), 500
-            
-    except Exception as e:
-        print(f"Contact form error: {e}")
-        return jsonify({'error': str(e)}), 500
-
 @app.route('/poll', methods=['GET'])
 def poll():
+    """Widget polls here for agent messages during handoff"""
     conversation_id = request.args.get('conversation_id')
     if not conversation_id:
         return jsonify({'messages': []})
     messages = AGENT_MESSAGES.pop(conversation_id, [])
     return jsonify({'messages': messages})
 
-
+# TELEGRAM WEBHOOK (Handles button clicks and agent replies)
 @app.route('/telegram-webhook', methods=['POST'])
 def telegram_webhook():
     try:
         data = request.json
-        print(f"Webhook received: {json.dumps(data)[:300]}")
 
+        # Handle button click: agent claims a customer
         if 'callback_query' in data:
             callback = data['callback_query']
             callback_data = callback['data']
@@ -316,10 +194,10 @@ def telegram_webhook():
                 bot_token = tg.get('bot_token')
                 group_chat_id = tg.get('group_chat_id')
 
+                # Mark handoff as active
                 set_conversation_state(conversation_id, 'handoff_active', True)
                 set_conversation_state(conversation_id, 'agent_name', agent_name)
                 set_conversation_state(conversation_id, 'agent_telegram_id', from_user.get('id'))
-                set_conversation_state(conversation_id, 'store_id', store_id)
 
                 ACTIVE_HANDOFFS[conversation_id] = {
                     'team_member': from_user,
@@ -328,6 +206,7 @@ def telegram_webhook():
                     'handled_at': datetime.now().isoformat()
                 }
 
+                # Acknowledge button press
                 requests.post(
                     f"https://api.telegram.org/bot{bot_token}/answerCallbackQuery",
                     json={
@@ -336,26 +215,24 @@ def telegram_webhook():
                     }
                 )
 
+                # Send confirmation to group
                 requests.post(
                     f"https://api.telegram.org/bot{bot_token}/sendMessage",
                     json={
                         "chat_id": group_chat_id,
-                        "text": (
-                            f"✅ *{agent_name}* is now handling this customer.\n\n"
-                            f"💬 Just type your replies here and they will appear "
-                            f"instantly in the customer's chat widget.\n"
-                            f"📌 Conversation ID: `{conversation_id}`"
-                        ),
+                        "text": f"*{agent_name}* is now handling this customer.\n\n💬 Type your replies here — they'll appear in the customer's chat widget.\n📌 Conversation ID: `{conversation_id}`",
                         "parse_mode": "Markdown"
                     }
                 )
 
+                # Notify customer that an agent joined
                 AGENT_MESSAGES[conversation_id].append({
                     'text': f"Hi! You're now connected with {agent_name} from our support team. How can I help you?",
                     'agent': agent_name,
                     'timestamp': datetime.now().isoformat()
                 })
 
+        # Handle agent reply message in Telegram group
         elif 'message' in data:
             msg = data['message']
             chat = msg.get('chat', {})
@@ -367,6 +244,7 @@ def telegram_webhook():
                 agent_id = from_user.get('id')
                 agent_name = from_user.get('first_name', 'Support Agent')
 
+                # Find which conversation this agent is handling
                 matched_conv_id = None
                 matched_store = None
 
@@ -376,37 +254,20 @@ def telegram_webhook():
                         matched_store = handoff.get('store_id')
                         break
 
-                if not matched_conv_id:
-                    try:
-                        result = supabase.table('conversations').select('id, metadata').execute()
-                        for row in result.data:
-                            meta = row.get('metadata') or {}
-                            if (meta.get('handoff_active') and
-                                    str(meta.get('agent_telegram_id')) == str(agent_id)):
-                                matched_conv_id = row['id']
-                                matched_store = meta.get('store_id')
-                                ACTIVE_HANDOFFS[matched_conv_id] = {
-                                    'team_member': from_user,
-                                    'team_member_name': agent_name,
-                                    'store_id': matched_store,
-                                    'handled_at': datetime.now().isoformat()
-                                }
-                                break
-                    except Exception as e:
-                        print(f"Supabase fallback error: {e}")
-
                 if matched_conv_id:
                     store_config = get_store(matched_store) if matched_store else {}
                     tg = store_config.get('telegram', {})
                     bot_token = tg.get('bot_token')
                     group_chat_id = chat.get('id')
 
+                    # Send message to customer's widget
                     AGENT_MESSAGES[matched_conv_id].append({
                         'text': text,
                         'agent': agent_name,
                         'timestamp': datetime.now().isoformat()
                     })
 
+                    # Confirm delivery in Telegram
                     if bot_token:
                         requests.post(
                             f"https://api.telegram.org/bot{bot_token}/sendMessage",
@@ -416,38 +277,21 @@ def telegram_webhook():
                                 "reply_to_message_id": msg.get('message_id')
                             }
                         )
-                else:
-                    print(f"No active handoff found for agent {agent_id}")
 
         return "OK", 200
 
     except Exception as e:
         print(f"Webhook error: {e}")
-        import traceback
-        traceback.print_exc()
         return "OK", 200
 
-
+# MAIN CHAT ENDPOINT
 URGENT_KEYWORDS = [
     'urgent', 'emergency', 'asap', 'immediately', 'quick',
-    'speak to human', 'talk to person', 'real person',
-    'help me now', 'right now', 'joldi', 'fast', 'quickly',
-    'problem', 'issue', 'serious', 'critical', 'important',
-    'talk to someone', 'human', 'person', 'agent', 'support team'
+    'speak to human', 'talk to person', 'real person', 'help me now',
+    'right now', 'fast', 'quickly', 'problem', 'issue', 'serious',
+    'critical', 'important', 'talk to someone', 'human', 'person',
+    'agent', 'support team', 'contact someone', 'need help'
 ]
-
-ORDER_KEYWORDS = ['order', 'track', 'where', 'parcel', 'delivery', 'shipping', 'received']
-
-
-def is_valid_phone(text):
-    return bool(re.match(
-        r'^(?:\+8801|01)[3-9]\d{8}$|^\d{11}$|^\+?[0-9\s\-\(\)]{10,15}$',
-        text.strip()
-    ))
-
-
-def is_valid_email(text):
-    return bool(re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', text.strip()))
 
 
 @app.route('/chat', methods=['POST'])
@@ -458,60 +302,49 @@ def chat():
         conversation_id = data.get('conversation_id', 'new')
         store_id = data.get('store_id', 'default')
         customer_email = data.get('email', '').strip()
-        customer_phone = data.get('phone', '').strip()
 
         store_config = get_store(store_id)
         tg_config = store_config.get('telegram', {})
-        escalation = store_config.get('escalation', {})
         contact = store_config.get('contact', {})
         store_name = store_config.get('name', 'Our Store')
         store_phone = contact.get('primary_phone', '')
-
         uses_telegram = tg_config.get('enabled', False)
-        uses_email = escalation.get('mode') == 'email'
 
         print(f"\n=== CHAT [{store_id}] ===")
-        print(f"Message: {message} | conv: {conversation_id}")
+        print(f"Message: {message}")
         print(f"Telegram enabled: {uses_telegram}")
 
-        # STEP 1: Check if waiting for contact info
+        # STEP 1: Check if waiting for email
         if conversation_id != 'new':
             waiting = get_conversation_state(conversation_id, 'waiting_for_contact')
             if waiting:
-                print("Waiting for contact info - processing...")
-                phone_in_msg = is_valid_phone(message)
+                print("Waiting for email - processing...")
                 email_in_msg = is_valid_email(message)
-                
-                if phone_in_msg or email_in_msg:
+
+                if email_in_msg:
                     set_conversation_state(conversation_id, 'waiting_for_contact', False)
                     urgent_msg = get_conversation_state(conversation_id, 'urgent_message') or "URGENT: Please contact me"
-                    
+
+                    # Get full conversation history
+                    conversation_history = get_conversation_history(conversation_id)
+
                     customer_info = {
-                        'email': message if email_in_msg else customer_email or 'Not provided',
-                        'phone': message if phone_in_msg else customer_phone or 'Not provided',
+                        'email': message,
                         'message': urgent_msg,
                         'conversation_id': conversation_id
                     }
-                    
+
                     if uses_telegram:
-                        result = send_telegram_alert(store_config, customer_info)
+                        result = send_telegram_alert(store_config, customer_info, conversation_history)
                         if result and result.get('ok'):
                             return jsonify({
-                                'response': f"✅ Thank you! Our team has been notified. Someone will contact you at {message} within 15 minutes.",
-                                'conversation_id': conversation_id,
-                                'handoff_initiated': True
-                            })
-                    elif uses_email:
-                        result = send_email_alert(store_config, customer_info)
-                        if result and result.get('ok'):
-                            return jsonify({
-                                'response': f"✅ Thank you! Our team will reach out to you at {message} within 24 hours.",
+                                'response': f"✅ Thank you! Our team has been notified. Someone will reach out to you shortly.",
                                 'conversation_id': conversation_id,
                                 'handoff_initiated': True
                             })
                 else:
                     return jsonify({
-                        'response': "Please provide a valid phone number (e.g., 01713162795) or email address.",
+                        'response': "Please provide a valid email address so our team can reach you.",
                         'conversation_id': conversation_id,
                         'ask_contact': True
                     })
@@ -537,22 +370,14 @@ def chat():
                     'handoff_active': True
                 })
 
-        # STEP 3: URGENCY DETECTION (MUST come before order detection)
-        urgent_keywords = [
-            'urgent', 'emergency', 'asap', 'immediately', 'quick',
-            'speak to human', 'talk to person', 'real person', 'help me now',
-            'right now', 'fast', 'quickly', 'problem', 'issue', 'serious',
-            'critical', 'important', 'talk to someone', 'human', 'person',
-            'agent', 'support team', 'contact someone', 'need help'
-        ]
-        
-        is_urgent = any(kw in message.lower() for kw in urgent_keywords)
+        # STEP 3: Urgency detection
+        is_urgent = any(kw in message.lower() for kw in URGENT_KEYWORDS)
         print(f"Is urgent: {is_urgent}")
 
-        # Handle urgent request FIRST
-        if is_urgent and (uses_telegram or uses_email):
+        # Handle urgent request (EMAIL ONLY)
+        if is_urgent and uses_telegram:
             print("URGENT DETECTED - initiating handoff flow")
-            
+
             if conversation_id == 'new':
                 result = supabase.table('conversations') \
                     .insert({'messages': [{"role": "system", "content": "Support session."}], 'metadata': {}}) \
@@ -562,25 +387,13 @@ def chat():
             set_conversation_state(conversation_id, 'waiting_for_contact', True)
             set_conversation_state(conversation_id, 'urgent_message', message)
 
-            prompt_suffix = "and our team will contact you shortly." if uses_email else "and a team member will join this chat right away."
-            
             return jsonify({
-                'response': f"I understand this is urgent. Please share your phone number or email {prompt_suffix}",
+                'response': "I understand you need assistance. Could you please provide your email address so our team can contact you?",
                 'conversation_id': conversation_id,
                 'ask_contact': True
             })
 
-        # STEP 4: Order tracking (only if NOT urgent)
-        order_keywords = ['order', 'track', 'where', 'parcel', 'delivery', 'shipping', 'received', 'address']
-        is_order = any(w in message.lower() for w in order_keywords)
-        
-        if is_order and store_phone:
-            return jsonify({
-                'response': f"For order tracking or delivery inquiries, please contact our store at {store_phone}. They'll have the most up-to-date information.",
-                'conversation_id': conversation_id
-            })
-
-        # STEP 5: Normal AI conversation
+        # STEP 4: Normal AI conversation
         faqs_text = "\n".join(
             f"Q: {f['question']}\nA: {f['answer']}"
             for f in store_config.get('faqs', [])
@@ -611,14 +424,14 @@ def chat():
             "Rules:",
             "1. Keep responses concise, warm, and on-brand.",
             "2. For order tracking, always refer customers to the store phone number.",
-            "3. If someone wants to speak to a human, ask for their contact details so the team can reach them.",
-            "4. Never make up information not provided above.",
+            "3. If someone asks for urgent help, ask for their EMAIL ONLY. Say: 'Could you please provide your email address so our team can contact you?'",
+            "4. Never ask for phone numbers.",
             f"5. Always stay in character as a support agent for {store_name}."
         ])
 
         system_prompt = "\n".join(system_prompt_parts)
 
-        # Get conversation history
+        # Get or create conversation
         if conversation_id != 'new':
             history = supabase.table('conversations') \
                 .select('messages') \
@@ -656,19 +469,6 @@ def chat():
         print(f"Chat error: {e}")
         import traceback
         traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/order-status', methods=['POST'])
-def order_status():
-    try:
-        order_number = request.json.get('order_number')
-        return jsonify({
-            'status': 'shipped',
-            'estimated_delivery': '3-5 business days',
-            'order_number': order_number,
-            'note': 'For detailed tracking please contact the store directly.'
-        })
-    except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
