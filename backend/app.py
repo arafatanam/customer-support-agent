@@ -338,13 +338,13 @@ def chat():
                         result = send_telegram_alert(store_config, customer_info, conversation_history)
                         if result and result.get('ok'):
                             return jsonify({
-                                'response': f"✅ Thank you! Our team has been notified. Someone will reach out to you shortly.",
+                                'response': f"Thank you! Our team has been notified. Someone will reach out to you shortly.",
                                 'conversation_id': conversation_id,
                                 'handoff_initiated': True
                             })
                 else:
                     return jsonify({
-                        'response': "Please provide a valid email address so our team can reach you.",
+                        'response': "Please share your email address so we can reach you if needed.",
                         'conversation_id': conversation_id,
                         'ask_contact': True
                     })
@@ -388,7 +388,7 @@ def chat():
             set_conversation_state(conversation_id, 'urgent_message', message)
 
             return jsonify({
-                'response': "I understand you need assistance. Could you please provide your email address so our team can contact you?",
+                'response': "Our team will be with you shortly. In case we can't reach you in time, could you please share your email address?",
                 'conversation_id': conversation_id,
                 'ask_contact': True
             })
