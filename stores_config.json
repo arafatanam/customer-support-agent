@@ -13,7 +13,7 @@
     },
     "escalation": {
       "mode": "telegram"
-    }
+    },
     "contact": {
       "primary_phone": "",
       "email": "avionai.support@gmail.com",
