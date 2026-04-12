@@ -11,7 +11,7 @@
       "mode": "email",
       "human_handoff": true,
       "alert_email": "avionai.support@gmail.com",
-      "escalation_phrase": "I'll pass your details to our team, and they'll follow up with you shortly."
+      "escalation_phrase": "I'll pass your details to our team and they'll follow up with you shortly."
     },
     "contact": {
       "primary_phone": "",
@@ -19,7 +19,7 @@
       "support_hours": "We respond within 24 hours"
     },
     "brand": {
-      "voice": "Modern, knowledgeable, and straightforward. You are a demo AI agent built by Avion AI. Be helpful and show off what an AI agent can do; answer questions about Avion AI's product, pricing, and process confidently.",
+      "voice": "Modern, knowledgeable, and straightforward. You are a demo AI agent built by Avion AI. Be helpful and show off what an AI agent can do — answer questions about Avion AI's product, pricing, and process confidently.",
       "primary_color": "#3d6ef6",
       "secondary_color": "#6b91ff",
       "greeting": "Hi there! I'm a live demo of an Avion AI agent. Ask me anything about our product, pricing, or how it works."
@@ -75,81 +75,6 @@
       {
         "question": "How do you train the AI on my business?",
         "answer": "We use your website content, FAQs, product info, and policies. You fill out a short intake form and we handle the rest."
-      }
-    ]
-  },
-
-  "prism_the_store_001": {
-    "store_id": "prism_the_store_001",
-    "name": "Prism The Store",
-    "website": "www.prismthestore.com",
-    "platform": "WordPress/Elementor",
-    "telegram": {
-      "enabled": true,
-      "bot_token": "8651304807:AAHfdlnbPZr0sOKHc6RuA0MHVOGoDC-hWM4",
-      "group_chat_id": -1003552610562,
-      "team_handoff": true,
-      "response_time": "15 minutes"
-    },
-    "escalation": {
-      "mode": "telegram",
-      "human_handoff": true,
-      "escalation_phrase": "I'll connect you with our human support team. Please expect a response within 15 minutes or call us at +8801729103420 for immediate assistance."
-    },
-    "contact": {
-      "primary_phone": "+8801729103420",
-      "secondary_phone": "+8801890312221",
-      "email": "info@prismthestore.com",
-      "support_hours": "10 AM to 10 PM (Bangladesh Time)"
-    },
-    "brand": {
-      "voice": "Luxury and premium — warm, elegant, and attentive. Speak like a high-end boutique assistant.",
-      "primary_color": "#304237",
-      "secondary_color": "#C4A467",
-      "greeting": "Welcome to Prism. How may I assist you today?"
-    },
-    "products": {
-      "categories": [
-        "Coral Haze Juttis",
-        "Ritu Kumar",
-        "Anita Dongre",
-        "Basanti",
-        "Mul Mul"
-      ],
-      "top_products": [
-        "Judyth",
-        "Spring Fling",
-        "Hannah",
-        "Mocha",
-        "Camellia",
-        "Nazakat",
-        "Esba",
-        "Beyonce",
-        "Sweet Pea",
-        "Gelato"
-      ]
-    },
-    "policies": {
-      "shipping": "We ship across Bangladesh. Delivery typically takes 3-5 business days.",
-      "returns": "We accept returns within 7 days of delivery for unused items in original condition.",
-      "international": false
-    },
-    "faqs": [
-      {
-        "question": "When will I receive my parcel?",
-        "answer": "For updates on your order delivery, please contact our Dhaka store at +8801729103420."
-      },
-      {
-        "question": "What are your store hours?",
-        "answer": "Our support team is available from 10 AM to 10 PM (Bangladesh Time)."
-      },
-      {
-        "question": "Do you offer exchanges?",
-        "answer": "Yes, we offer exchanges within 7 days of delivery. Please contact us at +8801729103420 to arrange."
-      },
-      {
-        "question": "Do you ship internationally?",
-        "answer": "Currently we ship within Bangladesh only. Stay tuned for international shipping updates."
       }
     ]
   }
