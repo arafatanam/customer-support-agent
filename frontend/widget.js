@@ -11,7 +11,7 @@ class SupportWidget {
         this.pendingUrgentMessage = '';
         this.handoffActive        = false;
         this.pollInterval         = null;
-        this.customerEmail        = null;  // Store email only
+        this.customerEmail        = null;
 
         // Branding from options
         this.storeName      = options.storeName      || 'Support';
@@ -23,7 +23,6 @@ class SupportWidget {
         this.init();
     }
 
-    // INIT
     init() {
         this.injectStyles();
         this.createButton();
@@ -38,7 +37,6 @@ class SupportWidget {
         document.getElementById('sw-send-btn').addEventListener('click', () => this.sendMessage());
     }
 
-    // STYLES
     injectStyles() {
         if (document.getElementById('sw-styles')) return;
         const p  = this.primaryColor;
@@ -90,7 +88,6 @@ class SupportWidget {
                 #sw-window.open { transform: translateX(-50%) translateY(0) scale(1); }
             }
 
-            /* Header */
             #sw-header {
                 background: ${p}; padding: 16px 18px;
                 display: flex; align-items: center; gap: 11px;
@@ -121,7 +118,6 @@ class SupportWidget {
             }
             #sw-close-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
 
-            /* Agent banner */
             #sw-agent-banner {
                 background: ${p}; color: ${s};
                 font-size: 11px; text-align: center; padding: 5px 12px;
@@ -130,7 +126,6 @@ class SupportWidget {
             }
             #sw-agent-banner.visible { display: block; }
 
-            /* Messages */
             #sw-messages {
                 flex: 1; padding: 16px 14px; overflow-y: auto;
                 display: flex; flex-direction: column; gap: 10px; background: #fafaf8;
@@ -161,7 +156,6 @@ class SupportWidget {
                 border-radius: 12px 2px 12px 12px;
             }
 
-            /* Typing */
             #sw-typing { display: none; gap: 8px; }
             #sw-typing.visible { display: flex; }
             .sw-typing-bubble {
@@ -180,7 +174,6 @@ class SupportWidget {
                 30%{transform:translateY(-5px);opacity:1}
             }
 
-            /* Confirmation card */
             .sw-confirm-card {
                 background: ${p}; color: #fff;
                 border-radius: 10px; padding: 14px 16px;
@@ -188,7 +181,6 @@ class SupportWidget {
                 border: 1px solid rgba(255,255,255,0.15);
             }
 
-            /* Input */
             #sw-input-area {
                 padding: 12px 14px; border-top: 1px solid rgba(0,0,0,0.07);
                 background: #fff; flex-shrink: 0;
@@ -226,7 +218,6 @@ class SupportWidget {
         document.head.appendChild(style);
     }
 
-    // BUILD UI
     createButton() {
         const btn  = document.createElement('button');
         btn.id     = 'sw-btn';
@@ -322,7 +313,6 @@ class SupportWidget {
         document.getElementById('sw-close-btn').addEventListener('click', () => this.toggleChat());
     }
 
-    // TOGGLE
     toggleChat() {
         this.isOpen = !this.isOpen;
         this.win.style.display = this.isOpen ? 'flex' : '';
@@ -337,7 +327,6 @@ class SupportWidget {
         }
     }
 
-    // UI HELPERS
     escapeHtml(text) {
         return String(text)
             .replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -367,7 +356,7 @@ class SupportWidget {
         if (show) document.getElementById('sw-messages').scrollTop = 999999;
     }
 
-    showConfirmation(phone) {
+    showConfirmation() {
         const msgs   = document.getElementById('sw-messages');
         const typing = document.getElementById('sw-typing');
         const div    = document.createElement('div');
@@ -375,7 +364,7 @@ class SupportWidget {
         div.innerHTML = `
             <p style="margin:0 0 4px;font-weight:600;">✅ Team Notified!</p>
             <p style="margin:0 0 4px;font-size:12px;">
-                A team member will be in touch shortly.
+                A team member will be with you shortly.
             </p>`;
         msgs.insertBefore(div, typing);
         msgs.scrollTop = msgs.scrollHeight;
@@ -393,12 +382,10 @@ class SupportWidget {
         if (inp)  inp.placeholder = 'Reply to agent…';
     }
 
-    // VALIDATION - Email only
     looksLikeEmail(v) {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
     }
 
-    // POLLING — receives agent replies
     startPolling() {
         if (this.pollInterval) return;
         this.pollInterval = setInterval(async () => {
@@ -416,7 +403,6 @@ class SupportWidget {
         }, 2500);
     }
 
-    // CONTACT FORM (Email only)
     showContactForm() {
         const msgs   = document.getElementById('sw-messages');
         const typing = document.getElementById('sw-typing');
@@ -424,10 +410,10 @@ class SupportWidget {
         const formDiv = document.createElement('div');
         formDiv.className = 'sw-contact-form';
         formDiv.innerHTML = `
-            <p>📧 How should our team contact you?</p>
+            <p>📧 Could you please provide your email address?</p>
             <input type="email" id="contact-email" class="sw-contact-input" placeholder="Your email address" />
-            <button id="submit-contact" class="sw-contact-button">🚀 Notify Team</button>
-            <div class="sw-contact-note">We'll reach out within 5 minutes</div>
+            <button id="submit-contact" class="sw-contact-button">Notify Team →</button>
+            <div class="sw-contact-note">We'll notify our team and they'll join this chat</div>
         `;
         
         msgs.insertBefore(formDiv, typing);
@@ -447,7 +433,6 @@ class SupportWidget {
         };
     }
 
-    // API CALL
     async callAPI(message, contactValue) {
         this.showTyping(true);
         document.getElementById('sw-send-btn').disabled = true;
@@ -501,7 +486,6 @@ class SupportWidget {
         }
     }
 
-    // SEND MESSAGE
     async sendMessage() {
         const input = document.getElementById('sw-chat-input');
         const msg   = input.value.trim();
@@ -511,9 +495,8 @@ class SupportWidget {
         this.addMessage('user', msg);
 
         if (this.awaitingContact) {
-            // Only validate email
             if (!this.looksLikeEmail(msg)) {
-                this.addMessage('bot', 'Please enter a valid email address.');
+                this.addMessage('bot', 'Please provide a valid email address.');
                 return;
             }
             this.awaitingContact = false;
