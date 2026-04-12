@@ -22,11 +22,7 @@ supabase = create_client(supabase_url, supabase_key)
 ACTIVE_HANDOFFS = {}
 AGENT_MESSAGES = defaultdict(list)
 
-
-# ─────────────────────────────────────────────
 # CONFIG
-# ─────────────────────────────────────────────
-
 def load_store_configs():
     try:
         with open('stores_config.json', 'r') as f:
@@ -40,11 +36,7 @@ STORE_CONFIGS = load_store_configs()
 def get_store(store_id):
     return STORE_CONFIGS.get(store_id) or STORE_CONFIGS.get('default', {})
 
-
-# ─────────────────────────────────────────────
 # SUPABASE HELPERS
-# ─────────────────────────────────────────────
-
 def set_conversation_state(conversation_id, state, value):
     try:
         result = supabase.table('conversations') \
@@ -60,7 +52,6 @@ def set_conversation_state(conversation_id, state, value):
     except Exception as e:
         print(f"Error setting state [{state}]: {e}")
 
-
 def get_conversation_state(conversation_id, state):
     try:
         result = supabase.table('conversations') \
@@ -73,7 +64,6 @@ def get_conversation_state(conversation_id, state):
     except Exception as e:
         print(f"Error getting state [{state}]: {e}")
         return None
-
 
 def get_conversation_history(conversation_id):
     try:
@@ -88,7 +78,7 @@ def get_conversation_history(conversation_id):
                 role = msg.get('role')
                 content = msg.get('content', '')[:300]
                 if role == 'user':
-                    history += f"\n👤 Customer: {content}"
+                    history += f"\n👤 User: {content}"
                 elif role == 'assistant':
                     history += f"\n🤖 AI: {content}"
             return history if history else "\n(No prior messages)"
@@ -97,11 +87,7 @@ def get_conversation_history(conversation_id):
         print(f"Error fetching history: {e}")
         return "\n(Unable to fetch history)"
 
-
-# ─────────────────────────────────────────────
 # TELEGRAM HELPERS
-# ─────────────────────────────────────────────
-
 def send_telegram_alert(store_config, customer_info, conversation_history=""):
     """Send initial urgent alert to Telegram with full chat history."""
     tg = store_config.get('telegram', {})
@@ -114,24 +100,23 @@ def send_telegram_alert(store_config, customer_info, conversation_history=""):
     keyboard = {
         "inline_keyboard": [[
             {
-                "text": "✅ I'll handle this",
+                "text": "✔️ I'll handle this",
                 "callback_data": f"handle__{store_id}__{conv_id}"
             }
         ]]
     }
 
     message = (
-        f"🔴 *URGENT — CUSTOMER NEEDS SUPPORT*\n"
+        f"*❗USER NEEDS SUPPORT*\n"
+        f"*🟡 Chat ID:* `{conv_id}`\n\n"
         f"━━━━━━━━━━━━━━━━━━━━━\n"
         f"*Store:* {store_name}\n"
         f"*Time:* {datetime.now().strftime('%I:%M %p, %b %d')}\n"
-        f"*Chat ID:* `{conv_id}`\n\n"
         f"*Trigger message:*\n\"{customer_info['message'][:200]}\"\n\n"
-        f"*Conversation so far:*\n"
+        f"*Conversation History:*\n"
         f"```{conversation_history}```\n"
         f"━━━━━━━━━━━━━━━━━━━━━\n"
-        f"Customer email will follow once they provide it.\n"
-        f"Press the button below to claim this chat:"
+        f"User email will follow once they provide it.\n"
     )
 
     try:
@@ -151,9 +136,8 @@ def send_telegram_alert(store_config, customer_info, conversation_history=""):
         print(f"Telegram alert error: {e}")
         return None
 
-
 def send_telegram_followup(store_config, conversation_id, email):
-    """Send customer email as a follow-up message after initial alert."""
+    """Send user email as a follow-up message after initial alert."""
     tg = store_config.get('telegram', {})
     bot_token = tg.get('bot_token')
     group_chat_id = tg.get('group_chat_id')
@@ -164,9 +148,9 @@ def send_telegram_followup(store_config, conversation_id, email):
             json={
                 "chat_id": group_chat_id,
                 "text": (
-                    f"📬 *Customer email received:*\n"
+                    f"🟡 Chat ID: `{conversation_id}`"
+                    f"*User email received:*\n"
                     f"Email: `{email}`\n"
-                    f"Chat ID: `{conversation_id}`"
                 ),
                 "parse_mode": "Markdown"
             },
@@ -175,19 +159,11 @@ def send_telegram_followup(store_config, conversation_id, email):
     except Exception as e:
         print(f"Telegram follow-up error: {e}")
 
-
-# ─────────────────────────────────────────────
 # VALIDATION
-# ─────────────────────────────────────────────
-
 def is_valid_email(text):
     return bool(re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', text.strip()))
 
-
-# ─────────────────────────────────────────────
 # ROUTES
-# ─────────────────────────────────────────────
-
 @app.route('/')
 def home():
     return jsonify({
@@ -197,11 +173,9 @@ def home():
         'endpoints': ['/chat', '/poll', '/health', '/telegram-webhook', '/test-groq']
     })
 
-
 @app.route('/health', methods=['GET'])
 def health():
     return jsonify({'status': 'healthy'})
-
 
 @app.route('/test-groq', methods=['GET'])
 def test_groq():
@@ -215,7 +189,6 @@ def test_groq():
     except Exception as e:
         return jsonify({'status': 'error', 'error': str(e)}), 500
 
-
 @app.route('/poll', methods=['GET'])
 def poll():
     conversation_id = request.args.get('conversation_id')
@@ -224,11 +197,7 @@ def poll():
     messages = AGENT_MESSAGES.pop(conversation_id, [])
     return jsonify({'messages': messages})
 
-
-# ─────────────────────────────────────────────
 # TELEGRAM WEBHOOK
-# ─────────────────────────────────────────────
-
 @app.route('/telegram-webhook', methods=['POST'])
 def telegram_webhook():
     try:
@@ -268,7 +237,7 @@ def telegram_webhook():
                     f"https://api.telegram.org/bot{bot_token}/answerCallbackQuery",
                     json={
                         "callback_query_id": callback['id'],
-                        "text": "You are now chatting with this customer!"
+                        "text": "You are now chatting with this user!"
                     }
                 )
 
@@ -277,9 +246,9 @@ def telegram_webhook():
                     json={
                         "chat_id": group_chat_id,
                         "text": (
-                            f"✅ *{agent_name}* is now handling this customer.\n\n"
-                            f"💬 Type replies here — they appear instantly in the chat widget.\n"
-                            f"📌 Conversation ID: `{conversation_id}`"
+                            f"🟡 Chat ID: `{conversation_id}`"
+                            f"*{agent_name}* is now handling this user.\n\n"
+                            f"Type replies here, they appear instantly in the chat widget.\n"
                         ),
                         "parse_mode": "Markdown"
                     }
@@ -347,7 +316,7 @@ def telegram_webhook():
                             f"https://api.telegram.org/bot{bot_token}/sendMessage",
                             json={
                                 "chat_id": group_chat_id,
-                                "text": "✓ Delivered to customer",
+                                "text": "🔴 Delivered to user",
                                 "reply_to_message_id": msg.get('message_id')
                             }
                         )
@@ -362,11 +331,7 @@ def telegram_webhook():
         traceback.print_exc()
         return "OK", 200
 
-
-# ─────────────────────────────────────────────
 # CHAT
-# ─────────────────────────────────────────────
-
 URGENT_KEYWORDS = [
     'urgent', 'emergency', 'asap', 'immediately', 'quick',
     'speak to human', 'talk to person', 'real person', 'help me now',
@@ -411,8 +376,7 @@ def chat():
                     return jsonify({
                         'response': (
                             f"Thank you! We have your email ({message}). "
-                            "Our team will reach out if they can't connect in the chat. "
-                            "Is there anything else I can help you with in the meantime?"
+                            "Our team will reach out if they can't connect in the chat."
                         ),
                         'conversation_id': conversation_id,
                         'handoff_initiated': True
@@ -435,7 +399,7 @@ def chat():
                         f"https://api.telegram.org/bot{bot_token}/sendMessage",
                         json={
                             "chat_id": group_chat_id,
-                            "text": f"💬 *Customer says:*\n{message}",
+                            "text": f"*🟢 User says:*\n{message}",
                             "parse_mode": "Markdown"
                         }
                     )
@@ -474,9 +438,8 @@ def chat():
 
             return jsonify({
                 'response': (
-                    "I've just notified our support team — they'll join this chat shortly. "
-                    "In the meantime, could you share your email address in case they need "
-                    "to follow up with you directly?"
+                    "I've just notified our support team, they'll join this chat shortly. "
+                    "In the meantime, could you share your email address in case they need to follow up with you directly?"
                 ),
                 'conversation_id': conversation_id,
                 'ask_contact': True
@@ -559,7 +522,6 @@ def chat():
         import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
-
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
