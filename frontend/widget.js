@@ -1,23 +1,3 @@
-/**
- * Avion AI — Universal Support Widget
- * =====================================
- * Drop this on any client site with one line:
- *
- *   <script>
- *   (function() {
- *     const s = document.createElement('script');
- *     s.src = 'https://your-vercel-domain.vercel.app/widget.js';
- *     s.onload = () => new SupportWidget('store_id_here', {
- *       storeName:      'Store Name',
- *       primaryColor:   '#HEX',
- *       secondaryColor: '#HEX',
- *       position:       'bottom-right'   // or 'bottom-left'
- *     });
- *     document.head.appendChild(s);
- *   })();
- *   </script>
- */
-
 class SupportWidget {
     constructor(storeId, options = {}) {
         this.storeId        = storeId;
@@ -31,6 +11,7 @@ class SupportWidget {
         this.pendingUrgentMessage = '';
         this.handoffActive        = false;
         this.pollInterval         = null;
+        this.customerEmail        = null;  // Store email only
 
         // Branding from options
         this.storeName      = options.storeName      || 'Support';
@@ -42,10 +23,7 @@ class SupportWidget {
         this.init();
     }
 
-    // ─────────────────────────────────────────────
     // INIT
-    // ─────────────────────────────────────────────
-
     init() {
         this.injectStyles();
         this.createButton();
@@ -60,10 +38,7 @@ class SupportWidget {
         document.getElementById('sw-send-btn').addEventListener('click', () => this.sendMessage());
     }
 
-    // ─────────────────────────────────────────────
     // STYLES
-    // ─────────────────────────────────────────────
-
     injectStyles() {
         if (document.getElementById('sw-styles')) return;
         const p  = this.primaryColor;
@@ -251,10 +226,7 @@ class SupportWidget {
         document.head.appendChild(style);
     }
 
-    // ─────────────────────────────────────────────
     // BUILD UI
-    // ─────────────────────────────────────────────
-
     createButton() {
         const btn  = document.createElement('button');
         btn.id     = 'sw-btn';
@@ -350,10 +322,7 @@ class SupportWidget {
         document.getElementById('sw-close-btn').addEventListener('click', () => this.toggleChat());
     }
 
-    // ─────────────────────────────────────────────
     // TOGGLE
-    // ─────────────────────────────────────────────
-
     toggleChat() {
         this.isOpen = !this.isOpen;
         this.win.style.display = this.isOpen ? 'flex' : '';
@@ -368,10 +337,7 @@ class SupportWidget {
         }
     }
 
-    // ─────────────────────────────────────────────
     // UI HELPERS
-    // ─────────────────────────────────────────────
-
     escapeHtml(text) {
         return String(text)
             .replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -410,8 +376,7 @@ class SupportWidget {
             <p style="margin:0 0 4px;font-weight:600;">✅ Team Notified!</p>
             <p style="margin:0 0 4px;font-size:12px;">
                 A team member will be in touch shortly.
-            </p>
-            ${phone ? `<p style="margin:0;font-size:11px;opacity:0.75;">Need faster help? Call: ${phone}</p>` : ''}`;
+            </p>`;
         msgs.insertBefore(div, typing);
         msgs.scrollTop = msgs.scrollHeight;
     }
@@ -428,24 +393,12 @@ class SupportWidget {
         if (inp)  inp.placeholder = 'Reply to agent…';
     }
 
-    // ─────────────────────────────────────────────
-    // VALIDATION
-    // ─────────────────────────────────────────────
-
-    looksLikePhone(v) {
-        return /^(?:\+8801|01)[3-9]\d{8}$/.test(v) ||
-               /^\d{11}$/.test(v) ||
-               /^\+?[0-9\s\-()]{10,15}$/.test(v);
-    }
-
+    // VALIDATION - Email only
     looksLikeEmail(v) {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
     }
 
-    // ─────────────────────────────────────────────
     // POLLING — receives agent replies
-    // ─────────────────────────────────────────────
-
     startPolling() {
         if (this.pollInterval) return;
         this.pollInterval = setInterval(async () => {
@@ -463,16 +416,43 @@ class SupportWidget {
         }, 2500);
     }
 
-    // ─────────────────────────────────────────────
-    // API CALL
-    // ─────────────────────────────────────────────
+    // CONTACT FORM (Email only)
+    showContactForm() {
+        const msgs   = document.getElementById('sw-messages');
+        const typing = document.getElementById('sw-typing');
+        
+        const formDiv = document.createElement('div');
+        formDiv.className = 'sw-contact-form';
+        formDiv.innerHTML = `
+            <p>📧 How should our team contact you?</p>
+            <input type="email" id="contact-email" class="sw-contact-input" placeholder="Your email address" />
+            <button id="submit-contact" class="sw-contact-button">🚀 Notify Team</button>
+            <div class="sw-contact-note">We'll reach out within 5 minutes</div>
+        `;
+        
+        msgs.insertBefore(formDiv, typing);
+        msgs.scrollTop = msgs.scrollHeight;
+        
+        document.getElementById('submit-contact').onclick = () => {
+            const email = document.getElementById('contact-email').value;
+            
+            if (email && email.includes('@')) {
+                this.customerEmail = email;
+                this.awaitingContact = false;
+                formDiv.remove();
+                this.callAPI(this.pendingUrgentMessage || "URGENT: Please contact me", email);
+            } else {
+                alert('Please provide a valid email address');
+            }
+        };
+    }
 
+    // API CALL
     async callAPI(message, contactValue) {
         this.showTyping(true);
         document.getElementById('sw-send-btn').disabled = true;
         this.isTyping = true;
 
-        const isPhone = contactValue && this.looksLikePhone(contactValue);
         const isEmail = contactValue && this.looksLikeEmail(contactValue);
 
         try {
@@ -483,8 +463,7 @@ class SupportWidget {
                     message,
                     conversation_id: this.conversationId,
                     store_id:        this.storeId,
-                    phone:           isPhone ? contactValue : '',
-                    email:           isEmail ? contactValue : ''
+                    email:           isEmail ? contactValue : this.customerEmail || ''
                 })
             });
             const data = await res.json();
@@ -496,13 +475,14 @@ class SupportWidget {
                 this.awaitingContact      = true;
                 this.pendingUrgentMessage = message;
                 this.addMessage('bot', data.response);
+                this.showContactForm();
 
             } else if (data.handoff_initiated) {
                 this.addMessage('bot', data.response);
                 this.showConfirmation();
                 this.awaitingContact      = false;
                 this.pendingUrgentMessage = '';
-                this.startPolling(); // polls for Telegram agent replies (no-op for email stores)
+                this.startPolling();
 
             } else if (data.handoff_active) {
                 this.startPolling();
@@ -521,10 +501,7 @@ class SupportWidget {
         }
     }
 
-    // ─────────────────────────────────────────────
     // SEND MESSAGE
-    // ─────────────────────────────────────────────
-
     async sendMessage() {
         const input = document.getElementById('sw-chat-input');
         const msg   = input.value.trim();
@@ -534,15 +511,13 @@ class SupportWidget {
         this.addMessage('user', msg);
 
         if (this.awaitingContact) {
-            // Validate contact info before hitting API
-            if (!this.looksLikePhone(msg) && !this.looksLikeEmail(msg)) {
-                this.addMessage('bot',
-                    'Please enter a valid phone number or email address.'
-                );
+            // Only validate email
+            if (!this.looksLikeEmail(msg)) {
+                this.addMessage('bot', 'Please enter a valid email address.');
                 return;
             }
             this.awaitingContact = false;
-            await this.callAPI(msg, msg); // send the contact value as the message
+            await this.callAPI(msg, msg);
         } else {
             await this.callAPI(msg, null);
         }
