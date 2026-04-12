@@ -9,7 +9,7 @@
       "bot_token": "8639587018:AAG1OWJB5kzV9zAEsr9Yw__BACFXthy5yTM",
       "group_chat_id": -1003988783861,
       "team_handoff": true,
-      "response_time": "5 minutes"
+      "response_time": "2 minutes"
     },
     "escalation": {
       "mode": "telegram"
@@ -23,7 +23,7 @@
       "voice": "Modern, knowledgeable, and straightforward. You are a demo AI agent built by Avion AI. Be helpful and show off what an AI agent can do — answer questions about Avion AI's product, pricing, and process confidently.",
       "primary_color": "#3d6ef6",
       "secondary_color": "#6b91ff",
-      "greeting": "Hi there! I'm a live demo of Avion AI. Ask me anything about our product, pricing, or how it works."
+      "greeting": "Hi there! I'm Avion AI. Ask me anything about our product, pricing, or how it works."
     },
     "products": {
       "categories": [
