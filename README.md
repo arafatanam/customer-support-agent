@@ -1,4 +1,4 @@
-# Avion AI - Multi-Store Customer Support Platform
+# Avion AI - AI Customer Support Agents
 
 A scalable, multi-tenant AI customer support agent platform. One codebase serves unlimited clients with store-specific customization, human handoff capabilities, and conversation history tracking.
 
@@ -13,6 +13,7 @@ A scalable, multi-tenant AI customer support agent platform. One codebase serves
 - [Deployment](#deployment)
 - [API Reference](#api-reference)
 - [Escalation Modes](#escalation-modes)
+- [Telegram Handoff Setup](#telegram-handoff-setup)
 - [Troubleshooting](#troubleshooting)
 
 ## Architecture Overview
@@ -45,9 +46,10 @@ A scalable, multi-tenant AI customer support agent platform. One codebase serves
 | **Backend** | Python/Flask | API server handling chat requests |
 | **AI Engine** | Groq (Llama 3.3 70B) | Free, fast AI responses |
 | **Database** | Supabase (PostgreSQL) | Conversation storage & state management |
-| **Frontend** | Vanilla JavaScript | Embeddable chat widget (2 versions: Avion AI Demo & Universal) |
+| **Frontend** | Vanilla JavaScript | Embeddable chat widget |
+| **Landing Page** | HTML/CSS (Chakra Petch, Space Grotesk fonts) | Marketing site with live demo widget |
 | **Hosting** | Render (backend) + Vercel (frontend) | Free tier hosting |
-| **Escalation** | Telegram API / SendGrid | Human handoff notifications |
+| **Escalation** | Telegram API / Resend | Human handoff notifications & contact form |
 
 ## Project Structure
 
@@ -59,7 +61,8 @@ customer-support-agent/
 │
 ├── frontend/
 │   ├── widget.js               # Universal chat widget
-│   └── index.html              # Avion AI demo landing page
+│   └── index.html              # Avion AI landing page
+│   └── favicon.ico             # Favicon of Avion AI
 │
 ├── stores_config.json           # All client configurations (root folder)
 ├── .gitignore                   # Git ignore rules
@@ -80,9 +83,10 @@ customer-support-agent/
 | `/` | GET | API status and available endpoints |
 | `/chat` | POST | Process user messages, return AI responses, handle handoffs |
 | `/poll` | GET | Widget polling for agent messages during handoff |
-| `/health` | GET | Health check endpoint |
+| `/health` | GET | Health check endpoint (used for cron job to keep Render alive) |
 | `/test-groq` | GET | Test Groq API connectivity |
 | `/telegram-webhook` | POST | Receive Telegram button clicks and agent replies |
+| `/api/contact` | POST | Contact form submission (Resend email) |
 | `/order-status` | POST | Mock order status endpoint |
 
 **How it works**:
@@ -110,14 +114,15 @@ customer-support-agent/
     "name": "Store Name",
     "website": "storeurl.com",
     "telegram": {
-      "enabled": true/false,
-      "bot_token": "telegram_bot_token",
-      "group_chat_id": -123456789
+      "enabled": true,
+      "bot_token": "your_bot_token",
+      "group_chat_id": -1003552610562,
+      "team_handoff": true,
+      "response_time": "5 minutes"
     },
     "escalation": {
-      "mode": "telegram" or "email",
-      "human_handoff": true,
-      "alert_email": "team@store.com"
+      "mode": "telegram",
+      "human_handoff": true
     },
     "brand": {
       "voice": "brand personality",
@@ -164,9 +169,13 @@ new SupportWidget('store_id_001', {
 });
 ```
 
-### 4. **`frontend/index.html`** - Avion AI Demo Landing Page
+### 4. **`frontend/index.html`** - Avion AI Landing Page
 
-**Purpose**: Marketing landing page for Avion AI with embedded demo widget using the `avion_demo` store configuration (email escalation).
+**Purpose**: Marketing website for Avion AI with embedded demo widget using the `avion_demo` store configuration (email escalation). Features:
+- Techy aesthetic with grid background, glassmorphism effects
+- Animated counters and scroll reveals
+- Smart Handoff section explaining Telegram flow
+- Contact form integrated with backend `/api/contact` endpoint
 
 ### 5. **`requirements.txt`** - Python Dependencies
 
@@ -199,7 +208,8 @@ services:
 - Vercel account (free)
 - Supabase account (free)
 - Groq account (free)
-- (Optional) Telegram Bot for handoff
+- Telegram account (for handoff)
+- Resend account (for contact form)
 
 ### Initial Setup
 
@@ -220,15 +230,20 @@ GROQ_API_KEY=your_groq_key
 SUPABASE_URL=your_supabase_url
 SUPABASE_KEY=your_supabase_key
 PYTHON_VERSION=3.11.11
-SENDGRID_API_KEY=your_sendgrid_key  # Optional, for email escalation
+RESEND_KEY=your_resend_key
 ```
 
-4. **Deploy Backend** (Render)
+4. **Keep Render Alive (Free Tier)**
+   - Set up a cron job to ping `/health` every 10-15 minutes
+   - Use cron-job.org (free) or UptimeRobot
+   - Target: `https://your-render-url.onrender.com/health`
+
+5. **Deploy Backend** (Render)
 - Connect GitHub repository
 - Use `render.yaml` configuration
 - Auto-deploys on push to main branch
 
-5. **Deploy Frontend** (Vercel)
+6. **Deploy Frontend** (Vercel)
 - Import GitHub repository
 - Root directory: `frontend`
 - Auto-deploys on push to main branch
@@ -264,9 +279,12 @@ CREATE INDEX IF NOT EXISTS idx_conversations_messages ON conversations USING gin
 - Contact information (email, phone)
 - Top 10 FAQs with answers
 - Preferred chat position
-- **Escalation preference** (Telegram or Email)
+- **Escalation preference** (Telegram)
 
-### Step 2: Add to `stores_config.json`
+### Step 2: Set Up Telegram for the Client
+Follow the [Telegram Handoff Setup](#telegram-handoff-setup) section below.
+
+### Step 3: Add to `stores_config.json`
 Add a new entry with unique store ID:
 
 ```json
@@ -277,7 +295,9 @@ Add a new entry with unique store ID:
     "telegram": {
       "enabled": true,
       "bot_token": "your_bot_token",
-      "group_chat_id": -123456789
+      "group_chat_id": -1003552610562,
+      "team_handoff": true,
+      "response_time": "5 minutes"
     },
     "escalation": {
       "mode": "telegram",
@@ -304,7 +324,7 @@ Add a new entry with unique store ID:
 }
 ```
 
-### Step 3: Generate Install Code
+### Step 4: Generate Install Code
 ```html
 <script>
 (function() {
@@ -323,14 +343,14 @@ Add a new entry with unique store ID:
 </script>
 ```
 
-### Step 4: Deploy
+### Step 5: Deploy
 ```bash
 git add stores_config.json
 git commit -m "Add new client: New Store"
 git push
 ```
 
-### Step 5: Send Install Instructions
+### Step 6: Send Install Instructions
 Provide client with install code for their platform.
 
 ## Deployment
@@ -338,6 +358,13 @@ Provide client with install code for their platform.
 ### Automatic Deployment
 - **Render**: Auto-deploys on push to `main` branch
 - **Vercel**: Auto-deploys on push to `main` branch
+
+### Keep Render Free Tier Alive
+Render free tier spins down after 15 minutes of inactivity. To prevent this:
+
+1. Sign up for a free account at [cron-job.org](https://cron-job.org) or [UptimeRobot](https://uptimerobot.com)
+2. Create a cron job that pings `/health` endpoint every 10-15 minutes
+3. Target URL: `https://your-render-url.onrender.com/health`
 
 ### Manual Deployment
 ```bash
@@ -389,18 +416,135 @@ GET /test-groq
 ```
 **Response** `{"status": "success", "message": "Groq is working!"}`
 
+### Contact Form
+```http
+POST /api/contact
+Content-Type: application/json
+
+{
+    "name": "John Doe",
+    "email": "john@example.com",
+    "company": "Example Corp",
+    "message": "I'm interested in your service"
+}
+```
+
 ## Escalation Modes
 
-### Telegram Mode
+### Telegram Mode (Recommended)
 - Real-time two-way chat between customer and agent
 - Agent receives alert with inline buttons
 - Agent can reply directly from Telegram
 - Best for businesses needing instant response
 
-### Email Mode
+### Email Mode (Legacy)
 - Customer's urgent request is emailed to the store
 - No two-way chat; store contacts customer directly
 - Best for simple lead capture or slower response needs
+
+## Telegram Handoff Setup
+
+Complete step-by-step guide to set up Telegram handoff for a new client.
+
+### Step 1 — Create your Telegram bot
+
+1. Open Telegram and search for **@BotFather**
+2. Send `/newbot`
+3. Choose a name (e.g. "Avion AI Support Bot")
+4. Choose a username ending in `bot` (e.g. `avionai_support_bot`)
+5. BotFather gives you a **bot token** — save it immediately
+   - Format: `8651304807:AAHfdlnbPZr0sOKHc6RuA0MHVOGoDC-hWM4`
+
+### Step 2 — Disable bot privacy mode
+
+> ⚠️ **Critical** — Without this, the bot cannot read group messages.
+
+1. In BotFather send `/mybots`
+2. Select your bot
+3. Go to **Bot Settings** → **Group Privacy** → **Turn OFF**
+4. You should see "Privacy mode is disabled"
+
+**Note:** If you disable privacy mode after adding the bot to a group, you must remove the bot and re-add it for changes to take effect.
+
+### Step 3 — Create Telegram group and get the real chat ID
+
+1. Create a new Telegram group (e.g. "Store Name Support Team")
+2. Add your bot to the group and make it **admin with all permissions**
+3. Send any message in the group (e.g. "hello")
+4. Open this URL in your browser (replace with your bot token):
+   ```
+   https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates
+   ```
+5. In the JSON response, find the `chat` object — the `id` field is your real chat ID
+   - Format: `-1003552610562`
+   - Note the `-100` prefix — this is required for supergroups and is different from what the Telegram web URL shows
+
+### Step 4 — Add config to `stores_config.json`
+
+```json
+"telegram": {
+  "enabled": true,
+  "bot_token": "YOUR_BOT_TOKEN",
+  "group_chat_id": -1003552610562,
+  "team_handoff": true,
+  "response_time": "5 minutes"
+},
+"escalation": {
+  "mode": "telegram"
+}
+```
+
+**Use the exact number from Step 3 including the minus sign.**
+
+### Step 5 — Register the webhook
+
+This tells Telegram where to send button clicks and group messages.
+
+Paste this in your browser (replace both placeholders):
+```
+https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook?url=https://<YOUR_RENDER_URL>/telegram-webhook
+```
+
+Example:
+```
+https://api.telegram.org/bot8651304807:AAHfdlnb.../setWebhook?url=https://customer-support-agent-y6qb.onrender.com/telegram-webhook
+```
+
+**Expected response:**
+```json
+{"ok": true, "result": true, "description": "Webhook was set"}
+```
+
+### Step 6 — Verify everything is connected
+
+Paste this in your browser:
+```
+https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getWebhookInfo
+```
+
+Check that:
+- `url` points to your Render endpoint (`/telegram-webhook`)
+- `pending_update_count` is `0`
+- `has_custom_certificate` is `false`
+
+### Step 7 — Test the full flow
+
+1. Open your website's chat widget
+2. Type something with an urgent keyword (e.g. "I need to speak to a human")
+3. Check your Telegram group — alert should appear with the **"I'll handle this"** button
+4. Click the button — group gets a confirmation message and the customer widget shows "You're now connected with [Name]"
+5. Type a reply in the Telegram group — it appears in the customer's widget within 2.5 seconds
+6. Customer types in the widget — it appears in the Telegram group as "💬 Customer says: ..."
+
+### ⚠️ Things that will silently break it
+
+| Problem | Solution |
+|---------|----------|
+| Using chat ID from Telegram web URL instead of from `getUpdates` | Always use the `-100` prefixed ID from `getUpdates` |
+| Not disabling privacy mode before adding bot to group | Remove bot from group, disable privacy mode, then re-add |
+| Forgetting to re-register webhook after `deleteWebhook` | Always re-run the `setWebhook` command |
+| Bot not being admin in the group | Add bot as admin with all permissions |
+| Wrong webhook URL (typo or missing `/telegram-webhook`) | Ensure URL ends with `/telegram-webhook` |
 
 ## Troubleshooting
 
@@ -413,11 +557,14 @@ GET /test-groq
 | Widget not showing | Check store_id matches exactly in config and widget init |
 | Contact not captured | Verify phone/email format in widget.js validation |
 | Handoff not working | Check Render logs for "URGENT DETECTED" and Telegram response |
+| Webhook not working | Run `getWebhookInfo` to verify URL and pending updates |
+| Contact form failing | Check RESEND_KEY environment variable and recipient email |
 
 ### Debug Steps
 1. Test Groq: `https://your-api.onrender.com/test-groq`
 2. Check Render logs in dashboard
-3. Test with curl:
+3. Test webhook: `https://api.telegram.org/bot<TOKEN>/getWebhookInfo`
+4. Test with curl:
 ```bash
 curl -X POST https://your-api.onrender.com/chat \
   -H "Content-Type: application/json" \
@@ -439,4 +586,22 @@ SELECT
     metadata->>'agent_name' as handled_by
 FROM conversations
 ORDER BY created_at DESC;
+
+-- View conversation with Telegram handoff status
+SELECT 
+    id,
+    created_at,
+    metadata->>'handoff_active' as handoff_active,
+    metadata->>'agent_name' as handled_by,
+    metadata->>'waiting_for_contact' as waiting_for_contact
+FROM conversations
+WHERE metadata->>'handoff_active' = 'true'
+ORDER BY created_at DESC;
 ```
+
+---
+
+**Built with ❤️ for businesses worldwide**
+```
+
+This README is fully formatted in Markdown and ready to be saved as `README.md` in your project root. It includes all the technical details, setup instructions, and the complete Telegram Handoff Setup guide you wrote.
