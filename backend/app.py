@@ -8,6 +8,7 @@ from datetime import datetime
 import requests
 import re
 from collections import defaultdict
+import pytz
 
 app = Flask(__name__)
 CORS(app)
@@ -21,6 +22,9 @@ supabase = create_client(supabase_url, supabase_key)
 
 ACTIVE_HANDOFFS = {}
 AGENT_MESSAGES = defaultdict(list)
+
+# Bangladesh timezone
+BD_TZ = pytz.timezone('Asia/Dhaka')
 
 # CONFIG
 def load_store_configs():
@@ -74,9 +78,9 @@ def get_conversation_history(conversation_id):
         if result.data and result.data[0].get('messages'):
             messages = result.data[0]['messages']
             history = ""
-            for msg in messages[1:]:  # skip system prompt
+            for msg in messages[1:]:
                 role = msg.get('role')
-                content = msg.get('content', '')[:300]
+                content = msg.get('content', '')
                 if role == 'user':
                     history += f"\n👤 User: {content}"
                 elif role == 'assistant':
@@ -96,6 +100,7 @@ def send_telegram_alert(store_config, customer_info, conversation_history=""):
     store_name = store_config.get('name', 'Store')
     conv_id = customer_info['conversation_id']
     store_id = store_config.get('store_id', 'unknown')
+    bd_time = datetime.now(BD_TZ)
 
     keyboard = {
         "inline_keyboard": [[
@@ -111,8 +116,8 @@ def send_telegram_alert(store_config, customer_info, conversation_history=""):
         f"*🟡 Chat ID:* `{conv_id}`\n\n"
         f"━━━━━━━━━━━━━━━━━━━━━\n"
         f"*Store:* {store_name}\n"
-        f"*Time:* {datetime.now().strftime('%I:%M %p, %b %d')}\n"
-        f"*Trigger message:*\n\"{customer_info['message'][:200]}\"\n\n"
+        f"*Time:* {bd_time.strftime('%I:%M %p, %b %d')}\n"
+        f"*Trigger message:*\n\"{customer_info['message']}\"\n\n"
         f"*Conversation History:*\n"
         f"```{conversation_history}```\n"
         f"━━━━━━━━━━━━━━━━━━━━━\n"
@@ -148,7 +153,7 @@ def send_telegram_followup(store_config, conversation_id, email):
             json={
                 "chat_id": group_chat_id,
                 "text": (
-                    f"🟡 Chat ID: `{conversation_id}`"
+                    f"🟡 Chat ID: `{conversation_id}`\n"
                     f"*User email received:*\n"
                     f"Email: `{email}`\n"
                 ),
@@ -230,7 +235,7 @@ def telegram_webhook():
                     'team_member': from_user,
                     'team_member_name': agent_name,
                     'store_id': store_id,
-                    'handled_at': datetime.now().isoformat()
+                    'handled_at': datetime.now(BD_TZ).isoformat()
                 }
 
                 requests.post(
@@ -246,7 +251,7 @@ def telegram_webhook():
                     json={
                         "chat_id": group_chat_id,
                         "text": (
-                            f"🟡 Chat ID: `{conversation_id}`"
+                            f"🟡 Chat ID: `{conversation_id}`\n"
                             f"*{agent_name}* is now handling this user.\n\n"
                             f"Type replies here, they appear instantly in the chat widget.\n"
                         ),
@@ -255,9 +260,9 @@ def telegram_webhook():
                 )
 
                 AGENT_MESSAGES[conversation_id].append({
-                    'text': f"Hi! You're now connected with {agent_name} from our support team. How can I help you?",
+                    'text': f"Hi! You're now connected with {agent_name} from our support team. Please give me a moment to review your chat history.",
                     'agent': agent_name,
-                    'timestamp': datetime.now().isoformat()
+                    'timestamp': datetime.now(BD_TZ).isoformat()
                 })
 
         elif 'message' in data:
@@ -293,7 +298,7 @@ def telegram_webhook():
                                     'team_member': from_user,
                                     'team_member_name': agent_name,
                                     'store_id': matched_store,
-                                    'handled_at': datetime.now().isoformat()
+                                    'handled_at': datetime.now(BD_TZ).isoformat()
                                 }
                                 break
                     except Exception as e:
@@ -308,7 +313,7 @@ def telegram_webhook():
                     AGENT_MESSAGES[matched_conv_id].append({
                         'text': text,
                         'agent': agent_name,
-                        'timestamp': datetime.now().isoformat()
+                        'timestamp': datetime.now(BD_TZ).isoformat()
                     })
 
                     if bot_token:
@@ -339,7 +344,6 @@ URGENT_KEYWORDS = [
     'critical', 'important', 'talk to someone', 'human', 'person',
     'agent', 'support team', 'contact someone', 'need help'
 ]
-
 
 @app.route('/chat', methods=['POST'])
 def chat():
