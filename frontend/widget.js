@@ -602,6 +602,7 @@ class SupportWidget {
 
   startPolling() {
     if (this.pollInterval) return;
+    console.log('Polling started for conv:', this.conversationId);
     this.pollInterval = setInterval(async () => {
       if (this.conversationId === "new") return;
       try {
@@ -642,10 +643,12 @@ class SupportWidget {
       if (data.conversation_id) this.conversationId = data.conversation_id;
 
       if (data.ask_contact) {
+        // Urgency detected — start polling IMMEDIATELY so agent messages appear
+        // even before the customer submits their email
         this.awaitingContact = true;
         this.pendingUrgentMessage = message;
         this.addMessage("bot", data.response);
-        this.startPolling();
+        this.startPolling(); // ← FIX: Start polling right away
       } else if (data.handoff_initiated) {
         this.addMessage("bot", data.response);
         this.showConfirmation();
@@ -679,6 +682,7 @@ class SupportWidget {
     const input = document.getElementById("sw-chat-input");
     const msg = input.value.trim();
 
+    // Guard against rapid submissions
     if (!msg || this.isTyping) return;
     this.isTyping = true;
     document.getElementById("sw-send-btn").disabled = true;
