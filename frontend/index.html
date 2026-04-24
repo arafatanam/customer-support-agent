@@ -3,17 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Avion AI - AI Customer Support Agents</title>
-    <link rel="icon" type="image/x-icon" href="./favicon.ico?v=2" />
-    <link rel="shortcut icon" type="image/x-icon" href="./favicon.ico?v=2" />
+    <title>Avion AI - AI Client Support Agents</title>
+    <link rel="icon" type="image/x-icon" href="./favicon.ico" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
-      href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Electrolize&family=Space+Grotesk:wght@300..700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap"
       rel="stylesheet"
     />
-
     <style>
-      /* ─── RESET & VARIABLES ─────────────────────────────── */
       *,
       *::before,
       *::after {
@@ -21,53 +18,19 @@
         margin: 0;
         padding: 0;
       }
-
       :root {
-        --ink: #06060e;
-        --ink2: #0d0d1a;
-        --ink3: #14141f;
+        --ink: #05050c;
+        --ink2: #12121c;
         --blue: #2a5ff5;
         --blue-lt: #5b85ff;
-        --blue-dim: rgba(42, 95, 245, 0.1);
-        --blue-glow: rgba(42, 95, 245, 0.25);
-        --sky: #a8c3ff;
-        --text: #d8daf0;
-        --muted: #6b6d8a;
-        --muted2: #2e2e42;
-        --white: #f2f3ff;
-        --gold: #e8c87a;
-        --green: #4ade80;
-        --r: 10px;
-
-        h1,
-        h2,
-        h3,
-        h4,
-        h5,
-        h6,
-        .nav-logo,
-        .section-title,
-        .stat-num,
-        .problem-title,
-        .hm-title,
-        .flow-num,
-        .step-num,
-        .step-title,
-        .feature-title,
-        .pricing-name,
-        .price-amount,
-        .value-title,
-        .final-cta h2,
-        .footer-logo {
-          font-family: "Chakra Petch", sans-serif;
-          letter-spacing: 0.01em;
-        }
+        --blue-dim: rgba(42, 95, 245, 0.09);
+        --text: #cdd0ee;
+        --white: #eef0ff;
+        --r: 12px;
       }
-
       html {
         scroll-behavior: smooth;
       }
-
       body {
         font-family: "DM Sans", sans-serif;
         background: var(--ink);
@@ -76,52 +39,61 @@
         -webkit-font-smoothing: antialiased;
         line-height: 1.6;
       }
+      h1,
+      h2,
+      h3,
+      .nav-logo,
+      .section-title,
+      .stat-num,
+      .step-num,
+      .step-title,
+      .feature-title,
+      .price-amount,
+      .footer-logo {
+        font-family: "Chakra Petch", sans-serif;
+      }
 
-      /* ─── NOISE GRAIN ───────────────────────────────────── */
       body::before {
         content: "";
         position: fixed;
         inset: 0;
         background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
         pointer-events: none;
-        z-index: 1000;
-        opacity: 0.35;
+        z-index: 999;
+        opacity: 0.28;
       }
 
-      /* ─── SCROLLBAR ─────────────────────────────────────── */
-      ::-webkit-scrollbar {
-        width: 4px;
-      }
-      ::-webkit-scrollbar-track {
-        background: var(--ink);
-      }
-      ::-webkit-scrollbar-thumb {
-        background: var(--muted2);
-        border-radius: 4px;
-      }
-
-      /* ─── GRID BG ───────────────────────────────────────── */
       .grid-bg {
         position: fixed;
         inset: 0;
         pointer-events: none;
         z-index: 0;
         background-image:
-          linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+          linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
           linear-gradient(
             90deg,
-            rgba(255, 255, 255, 0.028) 1px,
+            rgba(255, 255, 255, 0.022) 1px,
             transparent 1px
           );
-        background-size: 64px 64px;
+        background-size: 60px 60px;
         mask-image: radial-gradient(
-          ellipse 80% 80% at 50% 0%,
+          ellipse 80% 60% at 50% 0%,
           black 0%,
           transparent 100%
         );
       }
 
-      /* ─── NAV ───────────────────────────────────────────── */
+      ::-webkit-scrollbar {
+        width: 3px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--ink);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--text);
+        border-radius: 4px;
+      }
+
       nav {
         position: fixed;
         top: 0;
@@ -132,28 +104,28 @@
         align-items: center;
         justify-content: space-between;
         padding: 0 56px;
-        height: 68px;
-        background: rgba(6, 6, 14, 0.65);
-        backdrop-filter: blur(20px) saturate(160%);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.045);
+        height: 66px;
+        background: rgba(5, 5, 12, 0.6);
+        backdrop-filter: blur(24px) saturate(160%);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
         transition: background 0.4s;
       }
       nav.scrolled {
-        background: rgba(6, 6, 14, 0.9);
+        background: rgba(5, 5, 12, 0.92);
       }
       .nav-logo {
-        font-weight: 800;
-        font-size: 19px;
-        letter-spacing: -0.03em;
+        font-weight: 700;
+        font-size: 18px;
+        letter-spacing: -0.02em;
         color: var(--white);
         text-decoration: none;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 9px;
       }
       .nav-logo-dot {
-        width: 8px;
-        height: 8px;
+        width: 7px;
+        height: 7px;
         border-radius: 50%;
         background: var(--blue-lt);
         box-shadow: 0 0 10px var(--blue-lt);
@@ -166,18 +138,18 @@
           opacity: 1;
         }
         50% {
-          transform: scale(1.4);
-          opacity: 0.6;
+          transform: scale(1.5);
+          opacity: 0.55;
         }
       }
       .nav-links {
         display: flex;
-        gap: 36px;
+        gap: 32px;
         list-style: none;
       }
       .nav-links a {
-        font-size: 13.5px;
-        color: var(--muted);
+        font-size: 13px;
+        color: var(--text);
         text-decoration: none;
         font-weight: 400;
         letter-spacing: 0.01em;
@@ -197,7 +169,7 @@
         transform-origin: left;
       }
       .nav-links a:hover {
-        color: var(--white);
+        color: var(--blue-lt);
       }
       .nav-links a:hover::after {
         transform: scaleX(1);
@@ -213,275 +185,27 @@
         font-weight: 500;
         cursor: pointer;
         text-decoration: none;
-        letter-spacing: 0.01em;
         transition: all 0.25s;
-        box-shadow: 0 0 20px var(--blue-glow);
       }
       .nav-cta:hover {
         background: var(--blue-lt);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 28px var(--blue-glow);
       }
 
-      /* ─── SECTIONS ──────────────────────────────────────── */
       section {
         position: relative;
         z-index: 2;
       }
       .pad {
-        padding: 120px 56px;
+        padding: 112px 56px;
       }
       .inner {
-        max-width: 1180px;
+        max-width: 1160px;
         margin: 0 auto;
       }
 
-      /* ─── HERO ──────────────────────────────────────────── */
-      .hero {
-        min-height: auto;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        padding: 140px 24px 100px;
-        position: relative;
-        overflow: hidden;
-      }
-
-      /* Radial glow behind hero */
-      .hero-glow {
-        position: absolute;
-        width: 900px;
-        /* height: 200px; */
-        border-radius: 50%;
-        background: radial-gradient(
-          circle,
-          rgba(42, 95, 245, 0.14) 0%,
-          transparent 65%
-        );
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -60%);
-        pointer-events: none;
-        z-index: 0;
-        animation: hero-breathe 6s ease-in-out infinite;
-      }
-      @keyframes hero-breathe {
-        0%,
-        100% {
-          transform: translate(-50%, -60%) scale(1);
-          opacity: 1;
-        }
-        50% {
-          transform: translate(-50%, -60%) scale(1.08);
-          opacity: 0.75;
-        }
-      }
-
-      .hero > * {
-        position: relative;
-        z-index: 1;
-      }
-
-      .hero-eyebrow {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 6px 18px;
-        border: 1px solid rgba(91, 133, 255, 0.3);
-        border-radius: 40px;
-        background: rgba(42, 95, 245, 0.07);
-        font-size: 11.5px;
-        font-weight: 500;
-        color: var(--blue-lt);
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        margin-bottom: 36px;
-        backdrop-filter: blur(6px);
-        opacity: 0;
-        transform: translateY(16px);
-        animation: fade-up 0.7s 0.1s forwards;
-      }
-      .pulse {
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        background: var(--blue-lt);
-        box-shadow: 0 0 8px var(--blue-lt);
-        animation: pulse-dot 2s ease-in-out infinite;
-      }
-
-      .hero h1 {
-        font-size: clamp(44px, 7.5vw, 88px);
-        font-weight: 600;
-        line-height: 1;
-        letter-spacing: -0.04em;
-        color: var(--white);
-        max-width: 900px;
-        margin-bottom: 28px;
-        opacity: 0;
-        transform: translateY(20px);
-        animation: fade-up 0.8s 0.25s forwards;
-      }
-      .hero h1 .accent {
-        background: linear-gradient(135deg, var(--blue-lt), var(--sky));
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-      }
-      .hero h1 .line-2 {
-        display: block;
-        background: linear-gradient(135deg, #fff 30%, var(--sky));
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-      }
-
-      .hero-sub {
-        font-size: 17px;
-        font-weight: 300;
-        color: var(--muted);
-        max-width: 540px;
-        line-height: 1.75;
-        margin-bottom: 52px;
-        opacity: 0;
-        transform: translateY(20px);
-        animation: fade-up 0.8s 0.4s forwards;
-      }
-
-      .hero-btns {
-        display: flex;
-        gap: 14px;
-        flex-wrap: wrap;
-        justify-content: center;
-        opacity: 0;
-        transform: translateY(20px);
-        animation: fade-up 0.8s 0.55s forwards;
-      }
-      .btn-primary {
-        padding: 14px 30px;
-        background: var(--blue);
-        color: #fff;
-        border: none;
-        border-radius: 40px;
-        font-family: "DM Sans", sans-serif;
-        font-size: 14px;
-        font-weight: 500;
-        cursor: pointer;
-        text-decoration: none;
-        letter-spacing: 0.01em;
-        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        box-shadow: 0 4px 24px rgba(42, 95, 245, 0.45);
-      }
-      .btn-primary:hover {
-        transform: translateY(-3px) scale(1.02);
-        box-shadow: 0 10px 36px rgba(42, 95, 245, 0.6);
-        background: var(--blue-lt);
-      }
-      .btn-ghost {
-        padding: 14px 30px;
-        background: transparent;
-        color: var(--text);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 40px;
-        font-family: "DM Sans", sans-serif;
-        font-size: 14px;
-        font-weight: 400;
-        cursor: pointer;
-        text-decoration: none;
-        transition: all 0.25s;
-        backdrop-filter: blur(6px);
-      }
-      .btn-ghost:hover {
-        border-color: rgba(91, 133, 255, 0.4);
-        color: var(--blue-lt);
-      }
-
-      /* Stats row */
-      .hero-stats {
-        display: flex;
-        gap: 56px;
-        align-items: center;
-        margin-top: 80px;
-        padding-top: 56px;
-        border-top: 1px solid rgba(255, 255, 255, 0.05);
-        opacity: 0;
-        animation: fade-up 0.8s 0.7s forwards;
-      }
-      .stat {
-        text-align: center;
-      }
-      .stat-num {
-        font-size: 38px;
-        font-weight: 800;
-        letter-spacing: -0.03em;
-        color: var(--white);
-        line-height: 1;
-      }
-      .stat-label {
-        font-size: 11px;
-        color: var(--muted);
-        margin-top: 8px;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-      }
-      .stat-div {
-        width: 1px;
-        height: 36px;
-        background: rgba(255, 255, 255, 0.07);
-      }
-
-      @keyframes fade-up {
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      /* Scrolling marquee */
-      .marquee-wrap {
-        overflow: hidden;
-        border-top: 1px solid rgba(255, 255, 255, 0.04);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-        background: rgba(255, 255, 255, 0.015);
-        padding: 18px 0;
-      }
-      .marquee-track {
-        display: flex;
-        gap: 0;
-        animation: marquee-scroll 28s linear infinite;
-        white-space: nowrap;
-      }
-      .marquee-item {
-        display: inline-flex;
-        align-items: center;
-        gap: 12px;
-        padding: 0 48px;
-        font-size: 12px;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--muted);
-        font-weight: 500;
-      }
-      .marquee-sep {
-        color: var(--blue-lt);
-        font-size: 18px;
-        line-height: 1;
-      }
-      @keyframes marquee-scroll {
-        from {
-          transform: translateX(0);
-        }
-        to {
-          transform: translateX(-50%);
-        }
-      }
-
-      /* ─── SCROLL REVEAL ─────────────────────────────────── */
       .sr {
         opacity: 0;
-        transform: translateY(36px);
+        transform: translateY(32px);
         transition:
           opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
           transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
@@ -500,103 +224,325 @@
         transition-delay: 0.3s;
       }
 
-      /* ─── LABELS & HEADINGS ─────────────────────────────── */
       .eyebrow {
         display: inline-block;
-        font-size: 11px;
+        font-size: 10.5px;
         font-weight: 600;
-        letter-spacing: 0.12em;
+        letter-spacing: 0.14em;
         text-transform: uppercase;
         color: var(--blue-lt);
         background: var(--blue-dim);
         padding: 5px 14px;
         border-radius: 30px;
         margin-bottom: 20px;
-        border: 1px solid rgba(91, 133, 255, 0.15);
+        border: 1px solid rgba(91, 133, 255, 0.14);
       }
       .section-title {
-        font-size: clamp(32px, 4.5vw, 56px);
-        font-weight: 800;
+        font-size: clamp(30px, 4vw, 52px);
+        font-weight: 700;
         letter-spacing: -0.03em;
         line-height: 1.05;
         color: var(--white);
-        margin-bottom: 20px;
+        margin-bottom: 18px;
       }
       .section-body {
-        font-size: 16px;
+        font-size: 15.5px;
         font-weight: 300;
-        color: var(--muted);
-        line-height: 1.75;
-        max-width: 520px;
+        color: var(--text);
+        line-height: 1.8;
+        max-width: 500px;
       }
 
-      /* ─── PROBLEM SECTION ───────────────────────────────── */
-      .surface-section {
+      .hero {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 140px 24px 100px;
+        position: relative;
+        overflow: hidden;
+      }
+      .hero-glow {
+        position: absolute;
+        width: 1000px;
+        border-radius: 50%;
+        background: radial-gradient(
+          ellipse,
+          rgba(42, 95, 245, 0.13) 0%,
+          transparent 65%
+        );
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -65%);
+        pointer-events: none;
+        z-index: 0;
+        animation: hero-breathe 7s ease-in-out infinite;
+      }
+      @keyframes hero-breathe {
+        0%,
+        100% {
+          opacity: 1;
+          transform: translate(-50%, -65%) scale(1);
+        }
+        50% {
+          opacity: 0.7;
+          transform: translate(-50%, -65%) scale(1.1);
+        }
+      }
+      .hero > * {
+        position: relative;
+        z-index: 1;
+      }
+
+      .hero-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 18px;
+        border: 1px solid rgba(91, 133, 255, 0.25);
+        border-radius: 40px;
+        background: rgba(42, 95, 245, 0.06);
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--blue-lt);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-bottom: 36px;
+        backdrop-filter: blur(6px);
+        opacity: 0;
+        transform: translateY(16px);
+        animation: fade-up 0.7s 0.1s forwards;
+      }
+      .pulse {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--blue-lt);
+        box-shadow: 0 0 8px var(--blue-lt);
+        animation: pulse-dot 2s ease-in-out infinite;
+      }
+
+      .hero h1 {
+        font-size: clamp(46px, 8vw, 90px);
+        font-weight: 700;
+        line-height: 0.97;
+        letter-spacing: -0.045em;
+        color: var(--white);
+        margin-bottom: 28px;
+        opacity: 0;
+        transform: translateY(20px);
+        animation: fade-up 0.85s 0.25s forwards;
+      }
+      .hero h1 .accent {
+        background: linear-gradient(160deg, var(--blue-lt), var(--text));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .hero-sub {
+        font-size: 16.5px;
+        font-weight: 300;
+        color: var(--text);
+        max-width: 480px;
+        line-height: 1.8;
+        margin-bottom: 48px;
+        opacity: 0;
+        transform: translateY(20px);
+        animation: fade-up 0.85s 0.4s forwards;
+      }
+      .hero-btns {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+        opacity: 0;
+        transform: translateY(20px);
+        animation: fade-up 0.85s 0.55s forwards;
+      }
+      .btn-primary {
+        padding: 14px 30px;
+        background: var(--blue);
+        color: #fff;
+        border: none;
+        border-radius: 40px;
+        font-family: "DM Sans", sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.25s;
+      }
+      .btn-primary:hover {
+        background: var(--blue-lt);
+      }
+      .btn-ghost {
+        padding: 14px 30px;
+        background: transparent;
+        color: var(--text);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 40px;
+        font-family: "DM Sans", sans-serif;
+        font-size: 14px;
+        font-weight: 400;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.25s;
+        backdrop-filter: blur(6px);
+      }
+      .btn-ghost:hover {
+        border-color: rgba(91, 133, 255, 0.35);
+        color: var(--blue-lt);
+      }
+
+      .hero-stats {
+        display: flex;
+        gap: 52px;
+        align-items: center;
+        margin-top: 76px;
+        padding-top: 52px;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        opacity: 0;
+        animation: fade-up 0.85s 0.7s forwards;
+      }
+      .stat {
+        text-align: center;
+      }
+      .stat-num {
+        font-size: 36px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        color: var(--white);
+        line-height: 1;
+      }
+      .stat-label {
+        font-size: 10.5px;
+        color: var(--text);
+        margin-top: 8px;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+      }
+      .stat-div {
+        width: 1px;
+        height: 32px;
+        background: rgba(255, 255, 255, 0.06);
+      }
+      @keyframes fade-up {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .marquee-wrap {
+        overflow: hidden;
+        border-top: 1px solid rgba(255, 255, 255, 0.035);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.035);
+        background: rgba(255, 255, 255, 0.012);
+        padding: 16px 0;
+      }
+      .marquee-track {
+        display: flex;
+        animation: marquee 30s linear infinite;
+        white-space: nowrap;
+      }
+      .marquee-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0 44px;
+        font-size: 11.5px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text);
+        font-weight: 500;
+      }
+      .marquee-sep {
+        color: var(--blue-lt);
+        font-size: 14px;
+      }
+      @keyframes marquee {
+        from {
+          transform: translateX(0);
+        }
+        to {
+          transform: translateX(-50%);
+        }
+      }
+
+      .surface {
         background: var(--ink2);
-        border-top: 1px solid rgba(255, 255, 255, 0.04);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        border-top: 1px solid rgba(255, 255, 255, 0.035);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.035);
       }
       .problem-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1px;
-        background: rgba(255, 255, 255, 0.04);
-        border-radius: 14px;
-        overflow: hidden;
-        margin-top: 60px;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-top: 56px;
       }
       .problem-card {
-        background: var(--ink2);
-        padding: 40px 36px;
-        transition:
-          background 0.3s,
-          transform 0.3s;
-        cursor: default;
+        background: var(--ink);
+        border: 1px solid rgba(255, 255, 255, 0.047);
+        border-radius: var(--r);
+        padding: 28px 24px;
+        transition: all 0.3s;
       }
       .problem-card:hover {
-        background: var(--ink3);
-        transform: translateY(-2px);
+        border-color: rgba(42, 95, 245, 0.22);
+        transform: translateY(-3px);
+        background: var(--blue-dim);
       }
       .problem-icon {
-        font-size: 30px;
-        margin-bottom: 18px;
+        width: 44px;
+        height: 44px;
+        border-radius: 11px;
+        background: var(--blue-dim);
+        border: 1px solid rgba(42, 95, 245, 0.18);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        margin-bottom: 16px;
       }
       .problem-title {
-        font-size: 16px;
-        font-weight: 700;
+        font-size: 15px;
+        font-weight: 600;
         color: var(--white);
-        margin-bottom: 10px;
+        margin-bottom: 7px;
       }
       .problem-text {
-        font-size: 13.5px;
-        color: var(--muted);
-        line-height: 1.65;
+        font-size: 13px;
+        color: var(--text);
+        line-height: 1.7;
       }
 
-      /* ─── SOLUTION ──────────────────────────────────────── */
-      .solution-grid {
+      .solution-wrap {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 80px;
+        gap: 72px;
         align-items: center;
       }
+
+      /* Chat demo */
       .chat-demo {
         background: var(--ink2);
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.055);
         border-radius: 16px;
-        padding: 28px;
+        padding: 26px;
         display: flex;
         flex-direction: column;
-        gap: 14px;
-        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
+        gap: 13px;
+        box-shadow: 0 32px 80px rgba(0, 0, 0, 0.45);
       }
       .chat-demo-header {
         display: flex;
         align-items: center;
         gap: 10px;
-        padding-bottom: 16px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        margin-bottom: 6px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.045);
+        margin-bottom: 4px;
       }
       .chat-demo-av {
         width: 30px;
@@ -615,7 +561,7 @@
       }
       .chat-demo-status {
         font-size: 11px;
-        color: var(--green);
+        color: #4add80;
         display: flex;
         align-items: center;
         gap: 5px;
@@ -624,9 +570,8 @@
         width: 5px;
         height: 5px;
         border-radius: 50%;
-        background: var(--green);
+        background: #4add80;
       }
-
       .cd-row {
         display: flex;
         flex-direction: column;
@@ -636,7 +581,7 @@
       }
       .cd-label {
         font-size: 10px;
-        color: var(--muted2);
+        color: var(--text);
         margin-bottom: 5px;
         text-transform: uppercase;
         letter-spacing: 0.06em;
@@ -644,286 +589,230 @@
       }
       .cd-bubble {
         max-width: 82%;
-        padding: 11px 15px;
+        padding: 10px 14px;
         font-size: 13px;
         line-height: 1.6;
         border-radius: 4px 14px 14px 14px;
       }
       .cd-bubble.bot {
-        background: var(--ink3);
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: var(--ink);
+        border: 1px solid rgba(255, 255, 255, 0.055);
         color: var(--text);
       }
-      .cd-bubble.user {
+      .cd-bubble.client {
         background: var(--blue);
         color: #fff;
         border-radius: 14px 4px 14px 14px;
       }
       .cd-bubble.tg {
-        background: rgba(42, 95, 245, 0.08);
-        border: 1px solid rgba(42, 95, 245, 0.2);
+        background: rgba(42, 95, 245, 0.07);
+        border: 1px solid rgba(42, 95, 245, 0.18);
         color: var(--blue-lt);
         text-align: center;
         border-radius: 20px;
         width: 100%;
         max-width: 100%;
-        font-size: 12px;
+        font-size: 11.5px;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 8px;
       }
-      .tg-icon {
-        font-size: 16px;
+
+      .solution-note {
+        margin-top: 24px;
+        padding: 18px 20px;
+        background: var(--blue-dim);
+        border: 1px solid rgba(42, 95, 245, 0.18);
+        border-radius: 10px;
+        font-size: 13.5px;
+        color: var(--blue-lt);
+        line-height: 1.65;
       }
 
-      /* ─── HANDOFF SECTION ───────────────────────────────── */
       .handoff-section {
         background: var(--ink2);
-        border-top: 1px solid rgba(255, 255, 255, 0.04);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        border-top: 1px solid rgba(255, 255, 255, 0.035);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.035);
       }
       .handoff-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 80px;
+        gap: 72px;
         align-items: center;
-      }
-      .handoff-modes {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        margin-top: 40px;
-      }
-      .handoff-mode {
-        background: var(--ink3);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 14px;
-        padding: 24px 26px;
-        transition:
-          border-color 0.3s,
-          transform 0.3s;
-      }
-      .handoff-mode:hover {
-        border-color: rgba(42, 95, 245, 0.3);
-        transform: translateX(4px);
-      }
-      .hm-top {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 12px;
-      }
-      .hm-icon {
-        width: 38px;
-        height: 38px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
-        flex-shrink: 0;
-      }
-      .hm-icon.tg {
-        background: rgba(41, 182, 246, 0.12);
-        border: 1px solid rgba(41, 182, 246, 0.2);
-      }
-      .hm-icon.email {
-        background: rgba(232, 200, 122, 0.1);
-        border: 1px solid rgba(232, 200, 122, 0.2);
-      }
-      .hm-title {
-        font-size: 15px;
-        font-weight: 700;
-        color: var(--white);
-      }
-      .hm-badge {
-        margin-left: auto;
-        padding: 3px 10px;
-        border-radius: 20px;
-        font-size: 10px;
-        font-weight: 600;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-      }
-      .hm-badge.realtime {
-        background: rgba(74, 222, 128, 0.1);
-        color: var(--green);
-        border: 1px solid rgba(74, 222, 128, 0.2);
-      }
-      .hm-badge.async {
-        background: rgba(232, 200, 122, 0.1);
-        color: var(--gold);
-        border: 1px solid rgba(232, 200, 122, 0.2);
-      }
-      .hm-text {
-        font-size: 13px;
-        color: var(--muted);
-        line-height: 1.6;
       }
 
-      /* Telegram flow diagram */
       .tg-flow {
-        background: var(--ink3);
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: var(--ink);
+        border: 1px solid rgba(255, 255, 255, 0.055);
         border-radius: 16px;
-        padding: 32px;
-        position: relative;
+        padding: 30px;
         box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+      }
+      .tg-flow-header {
+        font-family: "Chakra Petch", sans-serif;
+        font-size: 13.5px;
+        font-weight: 600;
+        color: var(--white);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
       }
       .flow-step {
         display: flex;
         gap: 14px;
         align-items: flex-start;
-        padding: 14px 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        padding: 13px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.035);
       }
       .flow-step:last-child {
         border-bottom: none;
         padding-bottom: 0;
       }
       .flow-num {
-        width: 28px;
-        height: 28px;
-        border-radius: 8px;
+        width: 26px;
+        height: 26px;
+        border-radius: 7px;
         flex-shrink: 0;
         background: var(--blue-dim);
-        border: 1px solid rgba(42, 95, 245, 0.25);
+        border: 1px solid rgba(42, 95, 245, 0.22);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 12px;
+        font-family: "Chakra Petch", sans-serif;
+        font-size: 11px;
         font-weight: 700;
         color: var(--blue-lt);
       }
-      .flow-content {
-      }
       .flow-title {
-        font-size: 13.5px;
+        font-size: 13px;
         font-weight: 500;
         color: var(--white);
         margin-bottom: 3px;
       }
       .flow-desc {
         font-size: 12px;
-        color: var(--muted);
+        color: var(--text);
         line-height: 1.5;
       }
       .flow-chip {
         display: inline-block;
         margin-top: 6px;
         padding: 3px 10px;
-        background: rgba(41, 182, 246, 0.08);
-        border: 1px solid rgba(41, 182, 246, 0.2);
+        background: rgba(42, 95, 245, 0.07);
+        border: 1px solid rgba(42, 95, 245, 0.18);
         border-radius: 20px;
-        font-size: 11px;
-        color: #29b6f6;
+        font-size: 10.5px;
+        color: var(--blue-lt);
         font-weight: 500;
       }
 
-      /* ─── STEPS / HOW ───────────────────────────────────── */
+      .handoff-text .section-body {
+        margin-bottom: 0;
+      }
+
       .steps-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 1px;
-        background: rgba(255, 255, 255, 0.04);
-        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.035);
+        border-radius: var(--r);
         overflow: hidden;
-        margin-top: 60px;
+        margin-top: 56px;
       }
       .step-card {
         background: var(--ink2);
-        padding: 44px 36px;
+        padding: 42px 34px;
         transition: background 0.3s;
       }
       .step-card:hover {
-        background: var(--ink3);
+        background: var(--blue-dim);
       }
       .step-num {
-        font-size: 52px;
-        font-weight: 800;
-        color: var(--muted2);
+        font-size: 48px;
+        font-weight: 700;
+        color: var(--text);
         letter-spacing: -0.04em;
         line-height: 1;
-        margin-bottom: 20px;
+        margin-bottom: 18px;
         transition: color 0.3s;
       }
       .step-card:hover .step-num {
-        color: var(--blue);
+        color: var(--blue-lt);
       }
       .step-title {
-        font-size: 18px;
-        font-weight: 700;
+        font-size: 17px;
+        font-weight: 600;
         color: var(--white);
-        margin-bottom: 12px;
+        margin-bottom: 10px;
       }
       .step-text {
-        font-size: 13.5px;
-        color: var(--muted);
-        line-height: 1.65;
+        font-size: 13px;
+        color: var(--text);
+        line-height: 1.7;
       }
       .step-tag {
         display: inline-block;
-        margin-top: 22px;
+        margin-top: 20px;
         padding: 4px 12px;
         background: var(--blue-dim);
-        border: 1px solid rgba(42, 95, 245, 0.2);
+        border: 1px solid rgba(42, 95, 245, 0.18);
         border-radius: 20px;
-        font-size: 11px;
+        font-size: 10.5px;
         color: var(--blue-lt);
         font-weight: 500;
-        letter-spacing: 0.04em;
       }
 
-      /* ─── FEATURES ──────────────────────────────────────── */
       .features-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 18px;
-        margin-top: 60px;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-top: 56px;
       }
       .feature-card {
-        background: var(--ink2);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 14px;
+        background: var(--ink);
+        border: 1px solid rgba(255, 255, 255, 0.047);
+        border-radius: var(--r);
         padding: 28px 24px;
         transition: all 0.3s;
       }
       .feature-card:hover {
-        border-color: rgba(42, 95, 245, 0.25);
-        transform: translateY(-4px);
-        background: var(--ink3);
+        border-color: rgba(42, 95, 245, 0.22);
+        transform: translateY(-3px);
+        background: var(--blue-dim);
       }
       .feature-icon {
-        width: 46px;
-        height: 46px;
-        border-radius: 12px;
+        width: 44px;
+        height: 44px;
+        border-radius: 11px;
         background: var(--blue-dim);
-        border: 1px solid rgba(42, 95, 245, 0.2);
+        border: 1px solid rgba(42, 95, 245, 0.18);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 22px;
-        margin-bottom: 18px;
+        font-size: 20px;
+        margin-bottom: 16px;
       }
       .feature-title {
         font-size: 15px;
-        font-weight: 700;
+        font-weight: 600;
         color: var(--white);
-        margin-bottom: 8px;
+        margin-bottom: 7px;
       }
       .feature-text {
         font-size: 13px;
-        color: var(--muted);
-        line-height: 1.65;
+        color: var(--text);
+        line-height: 1.7;
       }
 
-      /* ─── PRICING ───────────────────────────────────────── */
+      .pricing-wrap {
+        max-width: 480px;
+        margin: 56px auto 0;
+      }
       .pricing-card {
-        max-width: 500px;
-        margin: 60px auto 0;
         background: var(--ink2);
-        border: 1px solid rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(255, 255, 255, 0.065);
         border-radius: 20px;
         overflow: hidden;
         box-shadow:
@@ -931,81 +820,82 @@
           0 0 0 1px rgba(255, 255, 255, 0.02);
       }
       .pricing-top {
-        padding: 44px 44px 36px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 40px 40px 32px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.045);
       }
       .pricing-plan {
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 600;
         color: var(--blue-lt);
         letter-spacing: 0.1em;
         text-transform: uppercase;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
       }
       .pricing-name {
-        font-size: 22px;
-        font-weight: 800;
+        font-size: 20px;
+        font-weight: 700;
         color: var(--white);
-        margin-bottom: 28px;
+        margin-bottom: 24px;
+        font-family: "Chakra Petch", sans-serif;
       }
       .pricing-price-row {
         display: flex;
         align-items: flex-end;
         gap: 6px;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
       }
       .price-amount {
-        font-size: 58px;
-        font-weight: 800;
+        font-size: 56px;
+        font-weight: 700;
         color: var(--white);
         line-height: 1;
         letter-spacing: -0.03em;
       }
       .price-per {
-        font-size: 14px;
-        color: var(--muted);
+        font-size: 13.5px;
+        color: var(--text);
         padding-bottom: 8px;
       }
       .price-setup {
-        font-size: 13px;
-        color: var(--muted);
+        font-size: 12.5px;
+        color: var(--text);
       }
       .price-setup strong {
         color: var(--blue-lt);
       }
       .pricing-feats {
-        padding: 32px 44px;
+        padding: 28px 40px;
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        gap: 14px;
       }
       .pricing-feat {
         display: flex;
         align-items: center;
         gap: 12px;
-        font-size: 14px;
+        font-size: 13.5px;
         color: var(--text);
       }
       .pcheck {
-        width: 20px;
-        height: 20px;
-        border-radius: 6px;
+        width: 18px;
+        height: 18px;
+        border-radius: 5px;
         background: var(--blue-dim);
-        border: 1px solid rgba(42, 95, 245, 0.3);
+        border: 1px solid rgba(42, 95, 245, 0.28);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 11px;
+        font-size: 10px;
         color: var(--blue-lt);
         flex-shrink: 0;
       }
       .pricing-action {
-        padding: 0 44px 44px;
+        padding: 0 40px 40px;
       }
       .pricing-action a {
         display: block;
         text-align: center;
-        padding: 15px;
+        padding: 14px;
         background: var(--blue);
         border-radius: 40px;
         color: #fff;
@@ -1013,126 +903,82 @@
         font-size: 14px;
         font-weight: 500;
         transition: all 0.25s;
-        box-shadow: 0 4px 20px rgba(42, 95, 245, 0.4);
       }
       .pricing-action a:hover {
         background: var(--blue-lt);
-        transform: translateY(-1px);
       }
       .pricing-note {
         text-align: center;
-        font-size: 12px;
-        color: var(--muted2);
-        margin-top: 14px;
-      }
-
-      /* ─── VALUE GRID ────────────────────────────────────── */
-      .value-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 18px;
-        margin-top: 60px;
-      }
-      .value-card {
-        background: var(--ink2);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 14px;
-        padding: 28px 24px;
-        display: flex;
-        gap: 16px;
-        transition: border-color 0.3s;
-      }
-      .value-card:hover {
-        border-color: rgba(42, 95, 245, 0.2);
-      }
-      .vdot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: var(--blue);
-        margin-top: 9px;
-        flex-shrink: 0;
-        box-shadow: 0 0 8px var(--blue-glow);
-      }
-      .value-title {
-        font-size: 15px;
-        font-weight: 700;
-        color: var(--white);
-        margin-bottom: 6px;
-      }
-      .value-text {
-        font-size: 13px;
+        font-size: 11.5px;
         color: var(--muted);
-        line-height: 1.65;
+        margin-top: 12px;
       }
 
-      /* ─── CONTACT ───────────────────────────────────────── */
       .contact-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 80px;
+        gap: 72px;
         align-items: start;
       }
       .contact-perks {
         display: flex;
         flex-direction: column;
-        gap: 18px;
-        margin-top: 36px;
+        gap: 16px;
+        margin-top: 32px;
       }
       .contact-perk {
         display: flex;
         align-items: center;
-        gap: 14px;
-        font-size: 14px;
-        color: var(--muted);
+        gap: 13px;
+        font-size: 13.5px;
+        color: var(--text);
       }
       .cperk-icon {
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
         background: var(--blue-dim);
-        border: 1px solid rgba(42, 95, 245, 0.2);
+        border: 1px solid rgba(42, 95, 245, 0.18);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 16px;
+        font-size: 14px;
         flex-shrink: 0;
       }
-
       .contact-form {
-        background: var(--ink2);
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: var(--ink);
+        border: 1px solid rgba(255, 255, 255, 0.055);
         border-radius: 20px;
-        padding: 40px;
-        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
+        padding: 38px;
+        box-shadow: 0 28px 72px rgba(0, 0, 0, 0.3);
       }
       .form-row {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 16px;
+        gap: 14px;
       }
       .form-group {
         display: flex;
         flex-direction: column;
-        gap: 8px;
-        margin-bottom: 16px;
+        gap: 7px;
+        margin-bottom: 14px;
       }
       label {
-        font-size: 11px;
+        font-size: 10.5px;
         font-weight: 600;
-        color: var(--muted);
+        color: var(--text);
         letter-spacing: 0.07em;
         text-transform: uppercase;
       }
       input,
       textarea {
-        background: var(--ink3);
-        border: 1px solid rgba(255, 255, 255, 0.07);
-        border-radius: 10px;
-        padding: 12px 16px;
+        background: var(--blue-dim);
+        border: 1px solid rgba(255, 255, 255, 0.065);
+        border-radius: 9px;
+        padding: 11px 14px;
         color: var(--text);
         font-family: "DM Sans", sans-serif;
-        font-size: 14px;
+        font-size: 13.5px;
         transition:
           border-color 0.2s,
           box-shadow 0.2s;
@@ -1143,17 +989,13 @@
         border-color: var(--blue);
         box-shadow: 0 0 0 3px var(--blue-dim);
       }
-      input::placeholder,
-      textarea::placeholder {
-        color: var(--muted2);
-      }
       textarea {
-        min-height: 100px;
+        min-height: 96px;
         resize: vertical;
       }
       .form-submit {
         width: 100%;
-        padding: 14px;
+        padding: 13px;
         background: var(--blue);
         border: none;
         border-radius: 40px;
@@ -1162,19 +1004,17 @@
         font-size: 14px;
         font-weight: 500;
         cursor: pointer;
-        margin-top: 8px;
+        margin-top: 6px;
         transition: all 0.25s;
-        box-shadow: 0 4px 20px rgba(42, 95, 245, 0.4);
       }
       .form-submit:hover {
         background: var(--blue-lt);
-        transform: translateY(-1px);
       }
       .form-note {
         text-align: center;
         font-size: 11px;
-        color: var(--muted2);
-        margin-top: 14px;
+        color: var(--text);
+        margin-top: 12px;
       }
       .form-success {
         display: none;
@@ -1182,27 +1022,26 @@
         padding: 48px 16px;
       }
       .form-success-icon {
-        font-size: 52px;
-        margin-bottom: 18px;
+        font-size: 48px;
+        margin-bottom: 16px;
       }
       .form-success h3 {
-        font-size: 22px;
+        font-size: 20px;
         font-weight: 700;
         color: var(--white);
         margin-bottom: 10px;
+        font-family: "Chakra Petch", sans-serif;
       }
       .form-success p {
-        font-size: 14px;
-        color: var(--muted);
+        font-size: 13.5px;
+        color: var(--text);
         line-height: 1.7;
       }
 
-      /* ─── FINAL CTA ─────────────────────────────────────── */
       .final-cta {
         text-align: center;
-        padding: 120px 24px;
-        background: var(--ink);
-        border-top: 1px solid rgba(255, 255, 255, 0.04);
+        padding: 112px 24px;
+        border-top: 1px solid rgba(255, 255, 255, 0.035);
         position: relative;
         overflow: hidden;
       }
@@ -1213,28 +1052,27 @@
         transform: translateX(-50%);
         width: 800px;
         height: 600px;
+        pointer-events: none;
         background: radial-gradient(
           circle,
-          rgba(42, 95, 245, 0.12) 0%,
+          rgba(42, 95, 245, 0.1) 0%,
           transparent 65%
         );
-        pointer-events: none;
       }
       .final-cta h2 {
-        font-size: clamp(36px, 5.5vw, 64px);
-        font-weight: 800;
+        font-size: clamp(34px, 5.5vw, 60px);
+        font-weight: 700;
         letter-spacing: -0.03em;
         color: var(--white);
-        max-width: 780px;
-        margin: 0 auto 20px;
+        margin: 0 auto 18px;
         line-height: 1.05;
         position: relative;
         z-index: 1;
       }
       .final-cta p {
-        font-size: 16px;
-        color: var(--muted);
-        margin-bottom: 40px;
+        font-size: 15.5px;
+        color: var(--text);
+        margin-bottom: 38px;
         position: relative;
         z-index: 1;
       }
@@ -1243,10 +1081,8 @@
         z-index: 1;
       }
 
-      /* ─── FOOTER ────────────────────────────────────────── */
       footer {
-        border-top: 1px solid rgba(255, 255, 255, 0.04);
-        padding: 32px 56px;
+        padding: 28px 56px;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -1255,28 +1091,27 @@
       }
       .footer-logo {
         font-size: 15px;
-        font-weight: 800;
+        font-weight: 700;
         color: var(--white);
         letter-spacing: -0.02em;
       }
       .footer-copy {
-        font-size: 12px;
-        color: var(--muted2);
+        font-size: 11.5px;
+        color: var(--text);
       }
 
-      /* ─── MOBILE ────────────────────────────────────────── */
       @media (max-width: 768px) {
         .pad {
-          padding: 80px 24px;
+          padding: 72px 24px;
         }
         nav {
-          padding: 0 24px;
+          padding: 0 22px;
         }
         .nav-links {
           display: none;
         }
         .hero-stats {
-          gap: 24px;
+          gap: 22px;
           flex-wrap: wrap;
           justify-content: center;
         }
@@ -1284,9 +1119,8 @@
           display: none;
         }
         .problem-grid,
-        .solution-grid,
+        .solution-wrap,
         .handoff-grid,
-        .value-grid,
         .contact-grid {
           grid-template-columns: 1fr;
         }
@@ -1299,21 +1133,10 @@
         }
         footer {
           flex-direction: column;
-          gap: 12px;
+          gap: 10px;
           text-align: center;
-          padding: 24px;
+          padding: 22px;
         }
-        .handoff-modes {
-          order: 2;
-        }
-        .tg-flow {
-          order: 1;
-        }
-      }
-
-      /* ─── COUNTER ANIMATION ─────────────────────────────── */
-      .count-up {
-        display: inline-block;
       }
     </style>
   </head>
@@ -1327,8 +1150,7 @@
         Avion AI
       </a>
       <ul class="nav-links">
-        <li><a href="#how">How it works</a></li>
-        <li><a href="#handoff">Smart Handoff</a></li>
+        <li><a href="#solution">How it works</a></li>
         <li><a href="#features">Features</a></li>
         <li><a href="#pricing">Pricing</a></li>
         <li><a href="#contact">Contact</a></li>
@@ -1344,40 +1166,37 @@
         AI-Powered Customer Support
       </div>
       <h1>
-        Stop losing customers<br />
-        <span class="line-2">to <span class="accent">slow replies</span></span>
+        Stop losing clients<br />to <span class="accent">slow replies</span>
       </h1>
       <p class="hero-sub">
         Avion AI deploys custom chat agents that handle questions, capture
-        leads, and hand off to your team instantly, without hiring.
+        leads, and hand off to your team instantly.
       </p>
       <div class="hero-btns">
         <a href="#contact" class="btn-primary">Book a Free Demo →</a>
-        <a href="#how" class="btn-ghost">See how it works</a>
+        <a href="#solution" class="btn-ghost">See how it works</a>
       </div>
       <div class="hero-stats">
         <div class="stat">
           <div class="stat-num">
-            <span class="count-up" data-target="80" data-suffix="%">0%</span>
+            <span class="count-up" data-target="80" data-suffix=" %">0%</span>
           </div>
-          <div class="stat-label">Conversations handled by AI</div>
+          <div class="stat-label">Handled by AI</div>
         </div>
         <div class="stat-div"></div>
         <div class="stat">
-          <div class="stat-num">24/7</div>
-          <div class="stat-label">Always-on availability</div>
+          <div class="stat-num">24 / 7</div>
+          <div class="stat-label">Always-on</div>
         </div>
         <div class="stat-div"></div>
         <div class="stat">
-          <div class="stat-num">&lt;1s</div>
+          <div class="stat-num">&lt; 1s</div>
           <div class="stat-label">Response time</div>
         </div>
         <div class="stat-div"></div>
         <div class="stat">
-          <div class="stat-num">
-            <span class="count-up" data-target="0" data-suffix="">0</span>
-          </div>
-          <div class="stat-label">Missed leads after hours</div>
+          <div class="stat-num">0</div>
+          <div class="stat-label">Missed leads</div>
         </div>
       </div>
     </section>
@@ -1395,11 +1214,11 @@
           ><span class="marquee-sep">✦</span> 24/7 lead capture</span
         >
         <span class="marquee-item"
-          ><span class="marquee-sep">✦</span> Custom-trained on your
+          ><span class="marquee-sep">✦</span> Custom-built on your
           business</span
         >
         <span class="marquee-item"
-          ><span class="marquee-sep">✦</span> Instant escalation detection</span
+          ><span class="marquee-sep">✦</span> Instant urgency detection</span
         >
         <span class="marquee-item"
           ><span class="marquee-sep">✦</span> Zero missed conversations</span
@@ -1414,11 +1233,11 @@
           ><span class="marquee-sep">✦</span> 24/7 lead capture</span
         >
         <span class="marquee-item"
-          ><span class="marquee-sep">✦</span> Custom-trained on your
+          ><span class="marquee-sep">✦</span> Custom-built on your
           business</span
         >
         <span class="marquee-item"
-          ><span class="marquee-sep">✦</span> Instant escalation detection</span
+          ><span class="marquee-sep">✦</span> Instant urgency detection</span
         >
         <span class="marquee-item"
           ><span class="marquee-sep">✦</span> Zero missed conversations</span
@@ -1427,12 +1246,12 @@
     </div>
 
     <!-- PROBLEM -->
-    <section class="surface-section pad">
+    <section class="surface pad">
       <div class="inner">
         <div class="sr">
           <div class="eyebrow">The Problem</div>
           <div class="section-title">
-            Slow support is<br />costing you customers
+            Slow support is<br />costing you clients
           </div>
           <p class="section-body">
             Your team answers the same questions daily, misses leads after
@@ -1444,8 +1263,7 @@
             <div class="problem-icon">⏱️</div>
             <div class="problem-title">Slow responses lose sales</div>
             <div class="problem-text">
-              Every minute of delay is a potential sale handed to a faster
-              competitor. Customers don't wait.
+              Every minute of delay is a sale handed to a faster competitor.
             </div>
           </div>
           <div class="problem-card">
@@ -1454,24 +1272,22 @@
               Repetitive questions drain your team
             </div>
             <div class="problem-text">
-              Your staff answers the same 10 questions daily, time that should
-              go toward growth.
+              Your staff answers the same 10 questions daily, rather should go
+              toward growth.
             </div>
           </div>
           <div class="problem-card">
             <div class="problem-icon">💸</div>
             <div class="problem-title">Hiring support is expensive</div>
             <div class="problem-text">
-              A full-time hire costs $3,000–$5,000/month before benefits.
-              There's a smarter way.
+              A full-time hire costs $3,000 to $5,000/month before benefits.
             </div>
           </div>
           <div class="problem-card">
             <div class="problem-icon">📵</div>
             <div class="problem-title">Leads go cold after hours</div>
             <div class="problem-text">
-              Most buying decisions happen outside business hours. If nobody
-              responds, you lose them.
+              Most buying decisions happen outside business hours.
             </div>
           </div>
         </div>
@@ -1479,33 +1295,22 @@
     </section>
 
     <!-- SOLUTION -->
-    <section class="pad">
+    <section class="pad" id="solution">
       <div class="inner">
-        <div class="solution-grid">
+        <div class="solution-wrap">
           <div class="sr">
             <div class="eyebrow">The Solution</div>
             <div class="section-title">
               An AI agent built<br />for your business
             </div>
             <p class="section-body">
-              Trained on your specific products, policies, and tone. Handles up
-              to 80% of conversations automatically and escalates the rest to
-              your team instantly.
+              Configured on your specific products, policies, and tone. Handles
+              up to 80% of conversations automatically and escalates the rest to
+              your team in real time.
             </p>
-            <div
-              style="
-                margin-top: 28px;
-                padding: 20px 22px;
-                background: var(--blue-dim);
-                border: 1px solid rgba(42, 95, 245, 0.2);
-                border-radius: 12px;
-                font-size: 14px;
-                color: var(--blue-lt);
-                line-height: 1.65;
-              "
-            >
+            <div class="solution-note">
               ⚡ When the AI can't help, it transfers the conversation to your
-              team in real time with full context, zero friction.
+              team instantly, with full context & zero friction.
             </div>
           </div>
           <div class="chat-demo sr sr-d2">
@@ -1519,9 +1324,9 @@
                 </div>
               </div>
             </div>
-            <div class="cd-row">
-              <div class="cd-label">Customer</div>
-              <div class="cd-bubble user">Hi, what's your return policy?</div>
+            <div class="cd-row right">
+              <div class="cd-label">Client</div>
+              <div class="cd-bubble client">Hi, what's your return policy?</div>
             </div>
             <div class="cd-row">
               <div class="cd-label">AI Agent</div>
@@ -1532,14 +1337,13 @@
               </div>
             </div>
             <div class="cd-row right">
-              <div class="cd-label">Customer</div>
-              <div class="cd-bubble user">
+              <div class="cd-label">Client</div>
+              <div class="cd-bubble client">
                 It's urgent, I need to speak to someone now
               </div>
             </div>
             <div class="cd-bubble tg">
-              <span class="tg-icon">🔔</span> Urgent detected! Alerting your
-              team on Telegram
+              🔔 Urgent detected — alerting your team on Telegram
             </div>
             <div class="cd-row">
               <div class="cd-label">Your Team</div>
@@ -1553,93 +1357,53 @@
       </div>
     </section>
 
-    <!-- SMART HANDOFF SECTION -->
-    <section class="handoff-section pad" id="handoff">
+    <!-- TELEGRAM HANDOFF -->
+    <section class="handoff-section pad">
       <div class="inner">
         <div class="handoff-grid">
-          <div class="sr">
+          <div class="sr handoff-text">
             <div class="eyebrow">Smart Escalation</div>
             <div class="section-title">
-              When customers<br />need a human,<br />we deliver one
+              When clients need a human,<br />we deliver one
             </div>
             <p class="section-body">
               The agent monitors every message for urgency signals, words like
-              "urgent," "emergency," "need help now," or any request for a real
-              person. It escalates instantly.
+              "urgent", "emergency", "need help now", or any request for a real
+              person, and escalates immediately to your Telegram group with the
+              full conversation.
             </p>
-            <div class="handoff-modes sr sr-d1">
-              <div class="handoff-mode">
-                <div class="hm-top">
-                  <div class="hm-icon tg">✈️</div>
-                  <div class="hm-title">Telegram Handoff</div>
-                  <div class="hm-badge realtime">Real-time</div>
-                </div>
-                <div class="hm-text">
-                  Your team receives an instant Telegram alert with the
-                  customer's contact info and full chat history. One tap
-                  connects your agent directly into the live conversation, the
-                  customer stays in the chat widget, no switching needed.
-                </div>
-              </div>
-              <div class="handoff-mode">
-                <div class="hm-top">
-                  <div class="hm-icon email">📧</div>
-                  <div class="hm-title">Email Handoff</div>
-                  <div class="hm-badge async">Async</div>
-                </div>
-                <div class="hm-text">
-                  For businesses with slower response workflows, urgent requests
-                  trigger an immediate email alert with customer details and
-                  their message. Best for lead capture and follow-up oriented
-                  teams.
-                </div>
-              </div>
-            </div>
           </div>
           <div class="tg-flow sr sr-d2">
-            <div
-              style="
-                font-family: &quot;Syne&quot;, sans-serif;
-                font-size: 14px;
-                font-weight: 700;
-                color: var(--white);
-                margin-bottom: 20px;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-              "
-            >
-              <span>✈️</span> Telegram Handoff Flow
-            </div>
+            <div class="tg-flow-header">✈️ Telegram Handoff Flow</div>
             <div class="flow-step">
               <div class="flow-num">1</div>
               <div class="flow-content">
-                <div class="flow-title">Customer types an urgent message</div>
+                <div class="flow-title">Client types an urgent message</div>
                 <div class="flow-desc">
-                  Agent detects keywords: "urgent", "emergency", "need help
-                  now", "speak to a person", "ASAP" and more.
+                  Agent detects signals: "urgent", "emergency", "need help now",
+                  "speak to a person", "ASAP" and more.
                 </div>
               </div>
             </div>
             <div class="flow-step">
               <div class="flow-num">2</div>
               <div class="flow-content">
-                <div class="flow-title">Agent asks for contact info</div>
+                <div class="flow-title">Telegram alert fires immediately</div>
                 <div class="flow-desc">
-                  Politely collects the customer's phone or email before
-                  escalating.
+                  Your team group receives a formatted alert with the full chat
+                  history.
                 </div>
+                <div class="flow-chip">⚡ Under 2 seconds</div>
               </div>
             </div>
             <div class="flow-step">
               <div class="flow-num">3</div>
               <div class="flow-content">
-                <div class="flow-title">Telegram alert fires immediately</div>
+                <div class="flow-title">Agent asks for client email</div>
                 <div class="flow-desc">
-                  Your team group receives a formatted alert with customer
-                  details and message.
+                  Collects a backup contact while the team gets ready to
+                  respond.
                 </div>
-                <div class="flow-chip">⚡ Under 2 seconds</div>
               </div>
             </div>
             <div class="flow-step">
@@ -1648,7 +1412,7 @@
                 <div class="flow-title">Agent taps "I'll handle this"</div>
                 <div class="flow-desc">
                   Claim the conversation with one button press. You're now live
-                  in the customer's chat.
+                  in the client's chat.
                 </div>
               </div>
             </div>
@@ -1658,18 +1422,9 @@
                 <div class="flow-title">Two-way live chat begins</div>
                 <div class="flow-desc">
                   Everything your team types in Telegram appears instantly in
-                  the customer's chat widget. Real support, zero friction.
+                  the client's widget.
                 </div>
-                <div
-                  class="flow-chip"
-                  style="
-                    background: rgba(74, 222, 128, 0.08);
-                    border-color: rgba(74, 222, 128, 0.2);
-                    color: var(--green);
-                  "
-                >
-                  ✓ Customer stays in widget
-                </div>
+                <div class="flow-chip">✓ Client stays in widget</div>
               </div>
             </div>
           </div>
@@ -1681,19 +1436,17 @@
     <section class="pad" id="how">
       <div class="inner">
         <div class="sr" style="text-align: center">
-          <div class="eyebrow" style="text-align: center">How It Works</div>
-          <div class="section-title" style="text-align: center">
-            Live in days, not months
-          </div>
+          <div class="eyebrow">How It Works</div>
+          <div class="section-title">Live in days, not months</div>
         </div>
         <div class="steps-grid sr sr-d1">
           <div class="step-card">
             <div class="step-num">01</div>
-            <div class="step-title">Train</div>
+            <div class="step-title">Configure</div>
             <div class="step-text">
-              We train your AI agent on your website, FAQs, and business data.
-              It learns your voice, policies, and the questions your customers
-              ask most.
+              We build your AI agent on your products, FAQs, and business data.
+              It learns your voice, policies, and the questions your clients ask
+              most.
             </div>
             <div class="step-tag">Week 1</div>
           </div>
@@ -1701,8 +1454,9 @@
             <div class="step-num">02</div>
             <div class="step-title">Deploy</div>
             <div class="step-text">
-              We install your agent on your website with a single line of code.
-              We also configure Telegram or email escalation for your team.
+              We install your agent on your website with a single line of code
+              and configure your Telegram escalation so your team is ready from
+              day one.
             </div>
             <div class="step-tag">Week 1–2</div>
           </div>
@@ -1710,8 +1464,8 @@
             <div class="step-num">03</div>
             <div class="step-title">Operate</div>
             <div class="step-text">
-              Your agent handles conversations around the clock. We review
-              performance monthly and continuously improve based on real data.
+              Your agent handles conversations around the clock. Updates and
+              adjustments are made as your business evolves.
             </div>
             <div class="step-tag">Ongoing</div>
           </div>
@@ -1720,7 +1474,7 @@
     </section>
 
     <!-- FEATURES -->
-    <section class="surface-section pad" id="features">
+    <section class="surface pad" id="features">
       <div class="inner">
         <div class="sr">
           <div class="eyebrow">Features</div>
@@ -1731,50 +1485,34 @@
         <div class="features-grid sr sr-d1">
           <div class="feature-card">
             <div class="feature-icon">🧠</div>
-            <div class="feature-title">Trained on your business</div>
+            <div class="feature-title">Built on your business</div>
             <div class="feature-text">
               Not a generic bot. Your agent knows your products, policies, and
-              tone. Built from your own data.
+              tone.
             </div>
           </div>
           <div class="feature-card">
             <div class="feature-icon">⚡</div>
             <div class="feature-title">Instant 24/7 responses</div>
             <div class="feature-text">
-              No delays, no off-hours gaps. Customers get accurate answers the
-              moment they ask.
+              Clients get accurate answers the moment they ask, any time, any
+              day.
             </div>
           </div>
           <div class="feature-card">
             <div class="feature-icon">✈️</div>
             <div class="feature-title">Telegram live handoff</div>
             <div class="feature-text">
-              Urgent conversations escalate to your Telegram instantly. One tap
-              and your agent is live with the customer.
+              Urgent conversations escalate to your Telegram instantly with full
+              history.
             </div>
           </div>
           <div class="feature-card">
             <div class="feature-icon">🎯</div>
             <div class="feature-title">Lead capture & qualification</div>
             <div class="feature-text">
-              Your agent collects contact details, qualifies intent, and
-              delivers warm leads directly to your team.
-            </div>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">📊</div>
-            <div class="feature-title">Monthly analytics report</div>
-            <div class="feature-text">
-              See what customers are asking, where conversations drop off, and
-              how your agent performs every month.
-            </div>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">🔄</div>
-            <div class="feature-title">Continuous optimization</div>
-            <div class="feature-text">
-              We review real conversations monthly and fine-tune your agent's
-              accuracy, tone, and coverage over time.
+              Your agent collects contact details, and delivers warm leads
+              directly to your team.
             </div>
           </div>
         </div>
@@ -1785,114 +1523,52 @@
     <section class="pad" id="pricing">
       <div class="inner">
         <div class="sr" style="text-align: center">
-          <div class="eyebrow" style="text-align: center">Pricing</div>
-          <div class="section-title" style="text-align: center">
-            Straightforward.<br />No surprises.
-          </div>
+          <div class="eyebrow">Pricing</div>
+          <div class="section-title">Straightforward.<br />No surprises.</div>
           <p class="section-body" style="margin: 0 auto; text-align: center">
             One plan. Everything included. Cancel any time.
           </p>
         </div>
-        <div class="pricing-card sr sr-d1">
-          <div class="pricing-top">
-            <div class="pricing-plan">Avion AI (Full System)</div>
-            <div class="pricing-name">AI Chat Agent</div>
-            <div class="pricing-price-row">
-              <div class="price-amount">$299</div>
-              <div class="price-per">/ month</div>
-            </div>
-            <div class="price-setup">
-              + <strong>$499 one-time setup</strong> (Build, training &
-              integration included)
-            </div>
-          </div>
-          <div class="pricing-feats">
-            <div class="pricing-feat">
-              <div class="pcheck">✓</div>
-              Custom AI agent trained on your business
-            </div>
-            <div class="pricing-feat">
-              <div class="pcheck">✓</div>
-              Full website integration (we handle it)
-            </div>
-            <div class="pricing-feat">
-              <div class="pcheck">✓</div>
-              Up to 2,000 conversations / month
-            </div>
-            <div class="pricing-feat">
-              <div class="pcheck">✓</div>
-              Telegram or email human handoff
-            </div>
-            <div class="pricing-feat">
-              <div class="pcheck">✓</div>
-              Lead capture & qualification
-            </div>
-            <div class="pricing-feat">
-              <div class="pcheck">✓</div>
-              Monthly performance report
-            </div>
-            <div class="pricing-feat">
-              <div class="pcheck">✓</div>
-              Ongoing optimization & improvements
-            </div>
-          </div>
-          <div class="pricing-action">
-            <a href="#contact">Get Started →</a>
-            <div class="pricing-note">
-              No long-term contract. Cancel any time.
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- VALUE -->
-    <section class="surface-section pad">
-      <div class="inner">
-        <div class="sr">
-          <div class="eyebrow">What You Gain</div>
-          <div class="section-title">
-            What this actually means<br />for your business
-          </div>
-        </div>
-        <div class="value-grid sr sr-d1">
-          <div class="value-card">
-            <div class="vdot"></div>
-            <div>
-              <div class="value-title">Respond to every customer instantly</div>
-              <div class="value-text">
-                No waiting. Every customer gets an immediate, accurate response
-                at any hour.
+        <div class="pricing-wrap sr sr-d1">
+          <div class="pricing-card">
+            <div class="pricing-top">
+              <div class="pricing-plan">Avion AI - Full System</div>
+              <div class="pricing-name">AI Chat Agent</div>
+              <div class="pricing-price-row">
+                <div class="price-amount">$299</div>
+                <div class="price-per">/ month</div>
+              </div>
+              <div class="price-setup">
+                + <strong>$499 one-time setup</strong> - build, configuration &
+                integration included
               </div>
             </div>
-          </div>
-          <div class="value-card">
-            <div class="vdot"></div>
-            <div>
-              <div class="value-title">Capture leads while you sleep</div>
-              <div class="value-text">
-                Your agent qualifies visitors and collects contact details
-                around the clock.
+            <div class="pricing-feats">
+              <div class="pricing-feat">
+                <div class="pcheck">✓</div>
+                Custom AI agent built on your business
+              </div>
+              <div class="pricing-feat">
+                <div class="pcheck">✓</div>
+                Full website integration (we handle it)
+              </div>
+              <div class="pricing-feat">
+                <div class="pcheck">✓</div>
+                Telegram live handoff system
+              </div>
+              <div class="pricing-feat">
+                <div class="pcheck">✓</div>
+                Lead capture & qualification
+              </div>
+              <div class="pricing-feat">
+                <div class="pcheck">✓</div>
+                Ongoing support & updates
               </div>
             </div>
-          </div>
-          <div class="value-card">
-            <div class="vdot"></div>
-            <div>
-              <div class="value-title">Cut support workload by up to 80%</div>
-              <div class="value-text">
-                Free your team from repetitive questions so they focus on work
-                that drives revenue.
-              </div>
-            </div>
-          </div>
-          <div class="value-card">
-            <div class="vdot"></div>
-            <div>
-              <div class="value-title">Never miss a conversation again</div>
-              <div class="value-text">
-                Whether it's 2pm or 2am, your business is always on. No lead
-                left behind.
+            <div class="pricing-action">
+              <a href="#contact">Get Started →</a>
+              <div class="pricing-note">
+                No long-term contract. Cancel any time.
               </div>
             </div>
           </div>
@@ -1901,7 +1577,7 @@
     </section>
 
     <!-- CONTACT -->
-    <section class="pad" id="contact">
+    <section class="surface pad" id="contact">
       <div class="inner">
         <div class="contact-grid">
           <div class="sr">
@@ -1916,7 +1592,7 @@
             <div class="contact-perks">
               <div class="contact-perk">
                 <div class="cperk-icon">✓</div>
-                Free 30-minute strategy call
+                Free 30 minute strategy call
               </div>
               <div class="contact-perk">
                 <div class="cperk-icon">✓</div>
@@ -1932,35 +1608,21 @@
             <div id="form-inner">
               <div class="form-row">
                 <div class="form-group">
-                  <label>Name</label
-                  ><input type="text" id="f-name" placeholder="Jane Smith" />
+                  <label>Name</label><input type="text" id="f-name" />
                 </div>
                 <div class="form-group">
-                  <label>Email</label
-                  ><input
-                    type="email"
-                    id="f-email"
-                    placeholder="jane@company.com"
-                  />
+                  <label>Email</label><input type="email" id="f-email" />
                 </div>
               </div>
               <div class="form-group">
                 <label>Company Website</label
-                ><input
-                  type="text"
-                  id="f-company"
-                  placeholder="https://yourwebsite.com"
-                />
+                ><input type="text" id="f-company" />
               </div>
               <div class="form-group">
-                <label>Message</label
-                ><textarea
-                  id="f-message"
-                  placeholder="Tell us about your business and what you're looking for…"
-                ></textarea>
+                <label>Message</label><textarea id="f-message"></textarea>
               </div>
               <button class="form-submit" id="form-btn">Send Message →</button>
-              <p class="form-note">We reply within 24 hours. No spam, ever.</p>
+              <p class="form-note">We'll get back to you within 24 hours.</p>
             </div>
             <div class="form-success" id="form-success">
               <div class="form-success-icon">✅</div>
@@ -1987,17 +1649,17 @@
       <a
         href="#contact"
         class="btn-primary sr sr-d2"
-        style="font-size: 15px; padding: 16px 34px"
+        style="font-size: 15px; padding: 15px 34px"
         >Book a Free Demo →</a
       >
     </section>
 
     <footer>
       <div class="footer-logo">Avion AI</div>
-      <p class="footer-copy">© 2025 Avion AI. All rights reserved.</p>
+      <p class="footer-copy">© 2026 Avion AI. All rights reserved.</p>
     </footer>
 
-    <!-- ─── CHAT WIDGET ─────────────────────────────────── -->
+    <!-- WIDGET -->
     <script>
       (function () {
         const s = document.createElement("script");
@@ -2009,7 +1671,7 @@
             secondaryColor: "#5b85ff",
             position: "bottom-right",
             greeting:
-              "Hi! 👋 I'm a live demo of Avion AI. Ask me anything about the product, pricing, or how it works.",
+              "Hi! 👋 I'm a live demo of Avion AI. Ask me anything about our product, pricing, or how it works.",
           });
         };
         document.head.appendChild(s);
@@ -2017,57 +1679,55 @@
     </script>
 
     <script>
-      /* ─── NAV SCROLL ─── */
+      /* NAV */
       window.addEventListener("scroll", () => {
         document
           .getElementById("main-nav")
           .classList.toggle("scrolled", window.scrollY > 40);
       });
 
-      /* ─── SCROLL REVEAL ─── */
+      /* SCROLL REVEAL */
       const srObs = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry, i) => {
             if (entry.isIntersecting) {
-              setTimeout(() => entry.target.classList.add("up"), i * 60);
+              setTimeout(() => entry.target.classList.add("up"), i * 55);
               srObs.unobserve(entry.target);
             }
           });
         },
-        { threshold: 0.08 },
+        { threshold: 0.07 },
       );
       document.querySelectorAll(".sr").forEach((el) => srObs.observe(el));
 
-      /* ─── COUNTER ANIMATION ─── */
+      /* COUNTER */
       function animateCounter(el) {
         const target = parseInt(el.dataset.target);
         const suffix = el.dataset.suffix || "";
         const duration = 1600;
         const start = performance.now();
         function update(now) {
-          const progress = Math.min((now - start) / duration, 1);
-          const eased = 1 - Math.pow(1 - progress, 3);
-          el.textContent = Math.round(eased * target) + suffix;
-          if (progress < 1) requestAnimationFrame(update);
+          const p = Math.min((now - start) / duration, 1);
+          const e = 1 - Math.pow(1 - p, 3);
+          el.textContent = Math.round(e * target) + suffix;
+          if (p < 1) requestAnimationFrame(update);
         }
         requestAnimationFrame(update);
       }
-      const counterObs = new IntersectionObserver(
+      const cObs = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting) {
               animateCounter(entry.target);
-              counterObs.unobserve(entry.target);
+              cObs.unobserve(entry.target);
             }
           });
         },
         { threshold: 0.5 },
       );
-      document
-        .querySelectorAll(".count-up")
-        .forEach((el) => counterObs.observe(el));
+      document.querySelectorAll(".count-up").forEach((el) => cObs.observe(el));
 
-      /* ─── CONTACT FORM ─── */
+      /* CONTACT FORM */
       document
         .getElementById("form-btn")
         .addEventListener("click", async function () {
@@ -2075,15 +1735,12 @@
           const email = document.getElementById("f-email").value.trim();
           const company = document.getElementById("f-company").value.trim();
           const message = document.getElementById("f-message").value.trim();
-
           if (!name || !email || !message) {
             alert("Please fill in your name, email, and message.");
             return;
           }
-
           this.textContent = "Sending…";
           this.disabled = true;
-
           try {
             const res = await fetch(
               "https://customer-support-agent-y6qb.onrender.com/api/contact",
